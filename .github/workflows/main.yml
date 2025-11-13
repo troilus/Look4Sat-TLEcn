@@ -54,7 +54,7 @@ jobs:
 
       - name: Rename APK and Bundle
         run: |
-          mv app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/look4sat.apk
+          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/look4sat.apk
           mv app/build/outputs/bundle/release/app-release.aab app/build/outputs/apk/release/look4sat.aab
 
       - name: Upload APK
