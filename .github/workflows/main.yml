@@ -27,10 +27,10 @@ jobs:
 
 
 
-      - name: Rename APK and Bundle
-        run: |
-          mv ${{steps.sign_apk.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.apk
-          mv ${{steps.sign_bundle.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.aab
+      - name: Rename APK and Bundle  
+        run: |  
+          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/look4sat.apk  
+          mv app/build/outputs/bundle/release/app-release.aab app/build/outputs/apk/release/look4sat.aab
 
 
 
