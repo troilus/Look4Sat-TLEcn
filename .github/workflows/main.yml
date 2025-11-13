@@ -32,11 +32,17 @@ jobs:
           mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/look4sat.apk  
           mv app/build/outputs/bundle/release/app-release.aab app/build/outputs/apk/release/look4sat.aab
 
+      - name: Upload APK  
+        uses: actions/upload-artifact@v4  
+        with:  
+          name: look4sat-apk  
+          path: app/build/outputs/apk/release/app-release-unsigned.apk  
 
 
-      - name: Create release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "app/build/outputs/apk/release/look4sat.apk,app/build/outputs/apk/release/look4sat.aab"
-          bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
-          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Create release  
+        uses: ncipollo/release-action@v1  
+        with:  
+          artifacts: "app/build/outputs/apk/release/app-release-unsigned.apk,app/build/outputs/bundle/release/app-release.aab"  
+          bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US  
+          token: ${{ secrets.GITHUB_TOKEN }}
