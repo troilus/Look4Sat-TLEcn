@@ -1,35 +1,45 @@
 name: Look4Sat CI
 
-on:  
-  push:  
-    tags:  
-      - v**  
+on:
+  push:
+    tags:
+      - v**
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
+      # 1️⃣ 拉取代码
       - name: Checkout Latest Commit
         uses: actions/checkout@v4
 
-      - name: Setup java environment
+      # 2️⃣ 安装 Java（构建 Android 项目需要）
+      - name: Setup Java environment
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # 3️⃣ 安装 Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # 4️⃣ 安装构建工具（关键修复点）
+      - name: Install build tools
+        run: sdkmanager "build-tools;34.0.0"
+
+      # 5️⃣ 构建 APK / AAB
       - name: Assemble APK and Bundle
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease
           ./gradlew bundleRelease
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
+      # 6️⃣ 签名 APK
       - name: Sign APK
-        uses: r0adkll/sign-android-release@v1
+        uses: r0adkll/sign-android-release@v1.0.6
         id: sign_apk
         with:
           releaseDirectory: app/build/outputs/apk/release
@@ -37,10 +47,10 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: "34.0.0"  # 使用稍旧的版本可能更稳定
 
+      # 7️⃣ 签名 AAB
       - name: Sign Bundle
-        uses: r0adkll/sign-android-release@v1
+        uses: r0adkll/sign-android-release@v1.0.6
         id: sign_bundle
         with:
           releaseDirectory: app/build/outputs/bundle/release
@@ -48,22 +58,24 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: "34.0.0"
 
-      - name: Rename APK and Bundle  
-        run: |  
-          mv app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/look4sat.apk  
+      # 8️⃣ 重命名产物
+      - name: Rename APK and Bundle
+        run: |
+          mv app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/look4sat.apk
           mv app/build/outputs/bundle/release/app-release.aab app/build/outputs/apk/release/look4sat.aab
 
-      - name: Upload APK  
-        uses: actions/upload-artifact@v4  
-        with:  
-          name: look4sat-apk  
-          path: app/build/outputs/apk/release/look4sat.apk  
+      # 9️⃣ 上传到 GitHub 构建产物（Artifacts）
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: look4sat-apk
+          path: app/build/outputs/apk/release/look4sat.apk
 
-      - name: Create release  
-        uses: ncipollo/release-action@v1  
-        with:  
-          artifacts: "app/build/outputs/apk/release/look4sat.apk,app/build/outputs/apk/release/look4sat.aab"  
-          bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US  
+      # 🔟 创建 GitHub Release（自动附带 APK / AAB）
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "app/build/outputs/apk/release/look4sat.apk,app/build/outputs/apk/release/look4sat.aab"
+          bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
           token: ${{ secrets.GITHUB_TOKEN }}
