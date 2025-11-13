@@ -26,11 +26,10 @@ jobs:
       - name: Install build tools
         run: sdkmanager "build-tools;29.0.3"
 
-      - name: Assemble APK and Bundle
+      - name: Build Release APK
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleRelease
-          ./gradlew bundleRelease
+          ./gradlew clean assembleRelease
 
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
@@ -42,30 +41,21 @@ jobs:
           alias: ${{ secrets.KEY_ALIAS }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Sign Bundle
-        uses: r0adkll/sign-android-release@v1
-        id: sign_bundle
-        with:
-          releaseDirectory: app/build/outputs/bundle/release
-          signingKeyBase64: ${{ secrets.KEY_STORE }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          alias: ${{ secrets.KEY_ALIAS }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Rename APK and Bundle
+      - name: Rename Signed APK
         run: |
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/look4sat.apk
-          mv app/build/outputs/bundle/release/app-release.aab app/build/outputs/apk/release/look4sat.aab
+          echo "Listing signed APKs for verification:"
+          ls -lh app/build/outputs/apk/release
+          mv app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/look4sat.apk
 
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: look4sat-apk
           path: app/build/outputs/apk/release/look4sat.apk
 
-      - name: Create release
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "app/build/outputs/apk/release/look4sat.apk,app/build/outputs/apk/release/look4sat.aab"
+          artifacts: "app/build/outputs/apk/release/look4sat.apk"
           bodyFile: fastlane/metadata/android/en-US/whatsnew/whatsnew-en-US
           token: ${{ secrets.GITHUB_TOKEN }}
