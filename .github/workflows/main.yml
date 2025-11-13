@@ -1,9 +1,10 @@
 name: Look4Sat CI
 
-on:
-  push:
-    tags:
-      - v**
+on:  
+  push:  
+    tags:  
+      - v**  
+  workflow_dispatch:
 
 jobs:
   deploy:
