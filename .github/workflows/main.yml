@@ -24,7 +24,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install build tools
-        run: sdkmanager "build-tools;34.0.0"
+        run: sdkmanager "build-tools;29.0.3"
 
       - name: Assemble APK and Bundle
         run: |
