@@ -24,6 +24,10 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease
           ./gradlew bundleRelease
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
         id: sign_apk
@@ -33,8 +37,7 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "35.0.1"
+          buildToolsVersion: "34.0.0"  # 使用稍旧的版本可能更稳定
 
       - name: Sign Bundle
         uses: r0adkll/sign-android-release@v1
@@ -45,13 +48,11 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: "35.0.1"
-
+          buildToolsVersion: "34.0.0"
 
       - name: Rename APK and Bundle  
         run: |  
-          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/look4sat.apk  
+          mv app/build/outputs/apk/release/app-release-signed.apk app/build/outputs/apk/release/look4sat.apk  
           mv app/build/outputs/bundle/release/app-release.aab app/build/outputs/apk/release/look4sat.aab
 
       - name: Upload APK  
@@ -59,8 +60,6 @@ jobs:
         with:  
           name: look4sat-apk  
           path: app/build/outputs/apk/release/look4sat.apk  
-
-
 
       - name: Create release  
         uses: ncipollo/release-action@v1  
