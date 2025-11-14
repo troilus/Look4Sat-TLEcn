@@ -7,10 +7,10 @@ plugins {
 }
 
 android {
-    namespace 'com.rtbishop-cn.look4sat'
+    namespace 'com.rtbishop_cn.look4sat'
     compileSdk 35
     defaultConfig {
-        applicationId "com.rtbishop-cn.look4sat"
+        applicationId "com.rtbishop_cn.look4sat"
         minSdk 21
         targetSdk 35
         versionCode 322
