@@ -35,32 +35,32 @@ jobs:
 
       - name: Clean Build with Cache Reset
         run: |
-        chmod +x ./gradlew
-        echo "=== 1. 停止现有Gradle守护进程 ==="
-        ./gradlew --stop 2>/dev/null || echo "无Gradle守护进程在运行"
-        
-        echo "=== 2. 智能清理Gradle缓存 ==="
-        # 检查并清理用户主目录缓存
-        if [ -d "$HOME/.gradle/caches" ]; then
-            echo "清理Gradle缓存目录..."
-            # 删除lock文件（如果存在）
-            find "$HOME/.gradle/caches" -name "*.lock" -type f -delete 2>/dev/null || true
-            # 清理transforms缓存（影响资源处理）
-            rm -rf "$HOME/.gradle/caches/transforms-"* 2>/dev/null || true
-            # 清理journal缓存（构建历史）
-            rm -rf "$HOME/.gradle/caches/journal-"* 2>/dev/null || true
-            echo "✅ Gradle缓存清理完成"
-        else
-            echo "ℹ️ Gradle缓存目录不存在，跳过清理"
-        fi
-        
-        # 清理项目本地构建缓存
-        echo "=== 3. 清理项目本地构建缓存 ==="
-        rm -rf .gradle build app/build 2>/dev/null || true
-        
-        echo "=== 4. 清理项目构建 ==="
-        ./gradlew clean
-
+          chmod +x ./gradlew
+          echo "=== 1. 停止现有Gradle守护进程 ==="
+          ./gradlew --stop 2>/dev/null || echo "无Gradle守护进程在运行"
+          
+          echo "=== 2. 智能清理Gradle缓存 ==="
+          # 检查并清理用户主目录缓存
+          if [ -d "$HOME/.gradle/caches" ]; then
+              echo "清理Gradle缓存目录..."
+              # 删除lock文件（如果存在）
+              find "$HOME/.gradle/caches" -name "*.lock" -type f -delete 2>/dev/null || true
+              # 清理transforms缓存（影响资源处理）
+              rm -rf "$HOME/.gradle/caches/transforms-"* 2>/dev/null || true
+              # 清理journal缓存（构建历史）
+              rm -rf "$HOME/.gradle/caches/journal-"* 2>/dev/null || true
+              echo "✅ Gradle缓存清理完成"
+          else
+              echo "ℹ️ Gradle缓存目录不存在，跳过清理"
+          fi
+          
+          # 清理项目本地构建缓存
+          echo "=== 3. 清理项目本地构建缓存 ==="
+          rm -rf .gradle build app/build 2>/dev/null || true
+          
+          echo "=== 4. 清理项目构建 ==="
+          ./gradlew clean
+  
       - name: Build Release APK
         run: |
           echo "=== 4. 强制刷新依赖并构建 ==="
