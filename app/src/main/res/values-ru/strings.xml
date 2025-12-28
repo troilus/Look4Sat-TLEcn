@@ -5,6 +5,12 @@
     <string name="app_version">Версия: %s</string>
     <string name="app_subtitle">Трекер спутников для Android</string>
 
+    <string name="nav_satellites">Спутники</string>
+    <string name="nav_passes">Пролеты</string>
+    <string name="nav_radar">Radar</string>
+    <string name="nav_map">Карта</string>
+    <string name="nav_settings">Настройки</string>
+
     <!--Buttons-->
 
     <string name="btn_add">Добавить</string>
@@ -30,8 +36,10 @@
     <string name="btn_web">Онлайн</string>
     <string name="btn_import">Импорт</string>
     <string name="btn_github">GitHub</string>
-    <string name="btn_support">Поддержать</string>
+    <string name="btn_donate">Поддержать</string>
     <string name="btn_fdroid">F-Droid</string>
+    <string name="btn_license">Лицензия</string>
+    <string name="btn_privacy">Конфиденц.</string>
 
     <!--Dialogs-->
 
@@ -61,7 +69,7 @@
 
     <!--Fragments-->
 
-    <string name="entries_search_hint">Поиск по Имени / Id</string>
+    <string name="entries_search_hint">Имя / Id</string>
 
     <string name="passes_error">Нет предстоящих пролётов спутников</string>
     <string name="passes_empty_db">Пожалуйста, обновите базу данных спутников через меню Настроек</string>
@@ -70,9 +78,9 @@
     <string name="pass_satId">Id:%d</string>
     <string name="pass_aosAz">НПС - %.1f°</string>
     <string name="pass_elevation">Элевация: %.1f°</string>
-    <string name="pass_los">%.1f° - КПС</string>
-    <string name="pass_altitude">Высота: %.0fкм</string>
-    <string name="pass_placeholder"> - - : - - </string>
+    <string name="pass_losAz">%.1f° - КПС</string>
+    <string name="pass_altitude">Высота: %d км</string>
+    <string name="pass_placeholder"> -- : -- : -- </string>
     <string name="pass_startTime">HH:mm:ss - EEE</string>
     <string name="pass_endTime">EEE - HH:mm:ss</string>
 
@@ -109,7 +117,6 @@
     <string name="map_elevation">Элевация: %.1f°</string>
     <string name="map_latitude">Широта: %.1f°</string>
     <string name="map_longitude">Долгота: %.1f°</string>
-    <string name="map_qth">QTH Локатор: %s</string>
     <string name="map_visible">Видимый</string>
     <string name="map_eclipsed">В тени</string>
     <string name="map_visibility">Видимость: %s</string>
@@ -150,27 +157,25 @@
     <string name="BTremote_output_hint">Формат данных</string>
     <string name="BTremote_perm_error">Нет разрешения использовать bluetooth</string>
 
-    <string name="other_title">Другие настройки</string>
     <string name="other_switch_utc">Показывать время по UTC</string>
     <string name="other_switch_update">Обновлять данные автоматически</string>
     <string name="other_switch_sweep">Показывать анимацию радара</string>
     <string name="other_switch_sensors">Использовать сенсоры устройства</string>
+    <string name="other_switch_light_theme">Использовать светлую тему</string>
 
     <string name="outro_title">Я хотел бы сказать спасибо:</string>
-    <string name="outro_thanks"> • Вам за использование этого приложения! \nЖелаю всегда чистого неба над головой!
-        \n • <a href="https://github.com/g4dpz">David A. B. Johnson</a> и
+    <string name="outro_thanks">Вам за использование этого приложения! \nЖелаю всегда чистого неба над головой!
+        \n<a href="https://github.com/g4dpz">David A. B. Johnson</a> и
         <a href="https://github.com/davidmoten">Dave Moten</a> за работу над predict4java и доступ
         к ней по <a href="https://gnu.org/licenses/old-licenses/gpl-2.0.en.html">GNU GPLv2</a>
-        \n • <a href="https://github.com/csete">Alexandru Csete</a> за его программу
+        \n<a href="https://github.com/csete">Alexandru Csete</a> за его программу
         Gpredict, которая послужила для меня вдохновением.
-        \n • <a href="https://celestrak.com/webmaster.php">Доктору T.S. Kelso</a> за его сайт
+        \n<a href="https://celestrak.com/webmaster.php">Доктору T.S. Kelso</a> за его сайт
         <a href="https://celestrak.com/">Celestrak</a> и доступ к файлам орбит Two-Line Element.
-        \n • <a href="https://libre.space/">Libre Space Foundation</a> за проект
+        \n<a href="https://libre.space/">Libre Space Foundation</a> за проект
         <a href="https://db.satnogs.org/">SatNOGS</a>, API и базу данных с информацией о спутниках.
-        \n • <a href="https://appoftheday.downloadastro.com/app/look4sat-satellite-tracker/">DownloadAstro</a>
+        \n<a href="https://appoftheday.downloadastro.com/app/look4sat-satellite-tracker/">DownloadAstro</a>
         за интерес к приложению и публикацию интервью на сайте.
     </string>
-    <string name="outro_license"><a href="https://sites.google.com/view/look4sat-privacy-policy/home">Политика конфиденциальности.</a>
-        \nЭто ПО поставляется без гарантий. \nПодробности в лицензии <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPLv3</a>.
-    </string>
+    <string name="outro_license">Это ПО поставляется без гарантий.</string>
 </resources>

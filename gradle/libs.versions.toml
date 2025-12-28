@@ -1,0 +1,74 @@
+[versions]
+android-gradle-plugin = "8.13.2"
+google-ksp = "2.3.0"
+kotlin = "2.3.0"
+
+androidx-core-ktx = "1.17.0"
+androidx-core-splashscreen = "1.2.0"
+androidx-room = "2.8.4"
+
+compose-bom = "2025.12.01"
+compose-activity = "1.12.2"
+compose-lifecycle = "2.10.0"
+compose-navigation = "2.9.6"
+
+other-coroutines = "1.10.2"
+other-json = "20250517"
+other-okhttp = "5.3.2"
+other-osmdroid = "6.1.20"
+
+test-junit4 = "4.13.2"
+
+androidTest-junit = "1.3.0"
+androidTest-espresso = "3.7.0"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core-ktx" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-core-splashscreen" }
+androidx-room = { module = "androidx.room:room-ktx", version.ref = "androidx-room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
+
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+compose-animation = { group = "androidx.compose.animation", name = "animation" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-material3-navigation = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite" }
+compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
+compose-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+
+compose-activity = { module = "androidx.activity:activity-compose", version.ref = "compose-activity" }
+compose-lifecycle = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "compose-lifecycle" }
+compose-navigation = { module = "androidx.navigation:navigation-compose", version.ref = "compose-navigation" }
+compose-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "compose-lifecycle" }
+
+compose-debug-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+compose-debug-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+
+other-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "other-coroutines" }
+other-json = { module = "org.json:json", version.ref = "other-json" }
+other-okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "other-okhttp" }
+other-osmdroid = { module = "org.osmdroid:osmdroid-android", version.ref = "other-osmdroid" }
+
+test-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "other-coroutines" }
+test-junit4 = { module = "junit:junit", version.ref = "test-junit4" }
+
+androidTest-junit = { module = "androidx.test.ext:junit", version.ref = "androidTest-junit" }
+androidTest-espresso = { module = "androidx.test.espresso:espresso-core", version.ref = "androidTest-espresso" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
+android-library = { id = "com.android.library", version.ref = "android-gradle-plugin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-ksp = { id = "com.google.devtools.ksp", version.ref = "google-ksp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+[bundles]
+composeAll = [
+    "compose-animation", "compose-runtime", "compose-tooling",
+    "compose-activity", "compose-lifecycle", "compose-material3",
+    "compose-material3-navigation", "compose-navigation", "compose-viewmodel"
+]
+composeDebug = ["compose-debug-manifest", "compose-debug-tooling"]
+unitTest = ["test-coroutines", "test-junit4"]
+androidTest = ["androidTest-junit", "androidTest-espresso"]
