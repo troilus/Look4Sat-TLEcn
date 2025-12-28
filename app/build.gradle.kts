@@ -10,7 +10,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.rtbishop_wty.look4sat"
+    namespace = "com.rtbishop.look4sat"
     compileSdk = 36
     defaultConfig {
         applicationId = "com.rtbishop_wty.look4sat"
