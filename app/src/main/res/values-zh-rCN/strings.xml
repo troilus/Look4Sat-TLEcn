@@ -5,17 +5,10 @@
     <string name="app_version">版本：%s</string>
     <string name="app_subtitle">人造卫星追踪和过境预测</string>
 
-    <string name="nav_satellites">卫星</string>
-    <string name="nav_passes">过境</string>
-    <string name="nav_radar">Radar</string>
-    <string name="nav_map">世界地图</string>
-    <string name="nav_settings">设置</string>
-
     <!--Buttons-->
 
     <string name="btn_add">添加</string>
     <string name="btn_accept">确定</string>
-    <string name="btn_understand">了解</string>
     <string name="btn_cancel">取消</string>
     <string name="btn_back">后退</string>
     <string name="btn_modes">模式</string>
@@ -37,14 +30,11 @@
     <string name="btn_web">在线更新</string>
     <string name="btn_import">导入文件</string>
     <string name="btn_github">GitHub</string>
-    <string name="btn_donate">支持</string>
+    <string name="btn_support">支持</string>
     <string name="btn_fdroid">F-Droid</string>
-    <string name="btn_license">GNU GPLv3</string>
-    <string name="btn_privacy">隐私政策</string>
 
     <!--Dialogs-->
 
-    <string name="passes_welcome_message">请务必在设置中通过GPS、经纬度或QTH定位您的位置\n建议至少每周更新一次数据库，以确保预测结果的准确性</string>
     <string name="filter_title">筛选过境</string>
     <string name="filter_hours_hint">小时数</string>
     <string name="filter_hours_text">显示未来 X 小时内的过境</string>
@@ -71,7 +61,7 @@
 
     <!--Fragments-->
 
-    <string name="entries_search_hint">Name / Id</string>
+    <string name="entries_search_hint">按名称或 ID 搜索</string>
 
     <string name="passes_error">没有即将过境的卫星</string>
     <string name="passes_empty_db">没有数据可显示，请通过设置菜单更新卫星数据。</string>
@@ -80,9 +70,9 @@
     <string name="pass_satId">Id:%d</string>
     <string name="pass_aosAz">入境 - %.1f°</string>
     <string name="pass_elevation">仰角：%.1f°</string>
-    <string name="pass_losAz">%.1f° - 出境</string>
-    <string name="pass_altitude">高度：%d km</string>
-    <string name="pass_placeholder"> -- : -- : -- </string>
+    <string name="pass_los">%.1f° - 出境</string>
+    <string name="pass_altitude">高度：%.0f km</string>
+    <string name="pass_placeholder">" - - : - - "</string>
     <string name="pass_startTime">HH:mm:ss - EEE</string>
     <string name="pass_endTime">EEE - HH:mm:ss</string>
 
@@ -119,6 +109,7 @@
     <string name="map_elevation">仰角：%.1f°</string>
     <string name="map_latitude">纬度：%.1f°</string>
     <string name="map_longitude">经度：%.1f°</string>
+    <string name="map_qth">QTH 网格：%s</string>
     <string name="map_visible">日照中</string>
     <string name="map_eclipsed">地影中</string>
     <string name="map_visibility">能见度：%s</string>
@@ -148,7 +139,6 @@
     <string name="data_success">更新成功</string>
     <string name="data_clear_success">数据清空成功</string>
 
-    <string name="last_updated_pattern">yyyy MMM d - HH:mm:ss</string>
     <string name="remote_title">旋转器首选项</string>
     <string name="remote_switch">启用远程控制</string>
     <string name="remote_ip_hint">IP地址</string>
@@ -160,33 +150,28 @@
     <string name="BTremote_output_hint">数据格式</string>
     <string name="BTremote_perm_error">请检查蓝牙权限</string>
 
+    <string name="other_title">其他偏好</string>
     <string name="other_switch_utc">以 UTC 时间显示</string>
     <string name="other_switch_update">启用卫星数据自动更新</string>
     <string name="other_switch_sweep">启用雷达扫描动画</string>
     <string name="other_switch_sensors">使用传感器旋转雷达视图</string>
-    <string name="other_switch_light_theme">使用旧版配色方案</string>
 
     <string name="outro_title">我要感谢：</string>
-    <string name="outro_thanks">感谢下载和使用 Look4Sat！愿你的天空永远晴朗！
-        \n简体中文版翻译由 <a href="https://github.com/BA7LWN">BA7LWN</a> 于 2022.5.10 创建。
-        \n<a href="https://github.com/g4dpz">David A. B. Johnson</a>
+    <string name="outro_thanks">• 感谢下载和使用 Look4Sat！愿你的天空永远晴朗！
+        \n • 简体中文版翻译由 <a href="https://github.com/BA7LWN">BA7LWN</a> 于 2022.5.10 创建。
+        \n • <a href="https://github.com/g4dpz">David A. B. Johnson</a>
         and <a href="https://github.com/davidmoten">Dave Moten</a> for creating predict4java lib
         under the <a href="https://gnu.org/licenses/old-licenses/gpl-2.0.en.html">GNU GPLv2</a>.
-        \n<a href="https://github.com/csete">Alexandru Csete</a> for creating Gpredict
+        \n • <a href="https://github.com/csete">Alexandru Csete</a> for creating Gpredict
         satellite tracker that inspired the creation of Look4Sat.
-        \n<a href="https://celestrak.com/webmaster.php">Dr T.S. Kelso</a> for maintaining his
+        \n • <a href="https://celestrak.com/webmaster.php">Dr T.S. Kelso</a> for maintaining his
         <a href="https://celestrak.com/">Celestrak</a> website that provides access to the TLE data.
-        \n<a href="https://libre.space/">Libre Space Foundation</a> for their
+        \n • <a href="https://libre.space/">Libre Space Foundation</a> for their
         <a href="https://db.satnogs.org/">SatNOGS</a> API and DB providing a huge amount of satellite data.
-        \n<a href="https://appoftheday.downloadastro.com/app/look4sat-satellite-tracker/">DownloadAstro</a>
+        \n • <a href="https://appoftheday.downloadastro.com/app/look4sat-satellite-tracker/">DownloadAstro</a>
         team for their interest to the app and the interview published.
     </string>
-    <string name="outro_license">该应用程序不提供任何保修.</string>
-    <string name="empty_list_title">没有可显示的内容</string>
-    <string name="satellites_empty_list_message">请确保您的搜素无误并且卫星数据已更新</string>
-    <string name="satellites_warning_title">警告!</string>
-    <string name="satellites_warning_message">此应用收录了超过9000颗卫星信息\n同时追踪所有卫星并不现实\n建议始终通过搜索和分类筛选功能仅勾选您感兴趣的卫星</string>
-    <string name="passes_empty_list_message">请确保您的筛选设置正确并且已勾选卫星</string>
-    <string name="passes_welcome_title">欢迎使用Look4Sat!</string>
+    <string name="outro_license"><a href="https://sites.google.com/view/look4sat-privacy-policy/home">隐私政策</a>
+        该应用程序不提供任何保修。\n有关详细信息，请参阅 <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPLv3 许可证</a> 。
+    </string>
 </resources>
-

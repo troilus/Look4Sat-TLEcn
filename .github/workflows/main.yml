@@ -66,9 +66,5 @@ jobs:
           body: |
             Look4Sat ${{ github.event.inputs.version }}
             
-            ## What's New
-            - Latest satellite tracking features
-            - Bug fixes and performance improvements
-            
-            Download the signed APK file above.
+
           token: ${{ secrets.GITHUB_TOKEN }}

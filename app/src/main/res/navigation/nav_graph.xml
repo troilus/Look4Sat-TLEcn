@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_root"
+    app:startDestination="@id/nav_passes">
+    <fragment
+        android:id="@+id/nav_entries"
+        android:name="com.rtbishop.look4sat.presentation.entriesScreen.EntriesFragment"
+        tools:layout="@layout/fragment_entries">
+        <action
+            android:id="@+id/entries_to_modes"
+            app:destination="@id/nav_modes"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+    <fragment
+        android:id="@+id/nav_passes"
+        android:name="com.rtbishop.look4sat.presentation.passesScreen.PassesFragment"
+        tools:layout="@layout/fragment_passes">
+        <action
+            android:id="@+id/passes_to_filter"
+            app:destination="@id/nav_filter"
+            app:enterAnim="@anim/nav_default_enter_anim"
+            app:exitAnim="@anim/nav_default_exit_anim"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
+    <fragment
+        android:id="@+id/nav_radar"
+        android:name="com.rtbishop.look4sat.presentation.radarScreen.RadarFragment"
+        tools:layout="@layout/fragment_radar">
+        <argument
+            android:name="catNum"
+            android:defaultValue="-1"
+            app:argType="integer" />
+        <argument
+            android:name="aosTime"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+    <fragment
+        android:id="@+id/nav_map"
+        android:name="com.rtbishop.look4sat.presentation.mapScreen.MapFragment"
+        tools:layout="@layout/fragment_map">
+        <argument
+            android:name="catNum"
+            android:defaultValue="-1"
+            app:argType="integer" />
+    </fragment>
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="com.rtbishop.look4sat.presentation.settingsScreen.SettingsFragment"
+        tools:layout="@layout/fragment_settings">
+    </fragment>
+    <dialog
+        android:id="@+id/nav_modes"
+        android:name="com.rtbishop.look4sat.presentation.entriesScreen.ModesDialog"
+        tools:layout="@layout/dialog_modes" />
+    <dialog
+        android:id="@+id/nav_filter"
+        android:name="com.rtbishop.look4sat.presentation.passesScreen.FilterDialog"
+        tools:layout="@layout/dialog_filter" />
+    <dialog
+        android:id="@+id/nav_position"
+        android:name="com.rtbishop.look4sat.presentation.settingsScreen.PositionDialog"
+        tools:layout="@layout/dialog_position" />
+    <dialog
+        android:id="@+id/nav_locator"
+        android:name="com.rtbishop.look4sat.presentation.settingsScreen.LocatorDialog"
+        tools:layout="@layout/dialog_locator" />
+    <action
+        android:id="@+id/global_to_entries"
+        app:destination="@id/nav_entries"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim"
+        app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+        app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    <action
+        android:id="@+id/global_to_passes"
+        app:destination="@id/nav_passes"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim"
+        app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+        app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    <action
+        android:id="@+id/global_to_radar"
+        app:destination="@id/nav_radar"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim"
+        app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+        app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    <action
+        android:id="@+id/global_to_map"
+        app:destination="@id/nav_map"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim"
+        app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+        app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    <action
+        android:id="@+id/global_to_settings"
+        app:destination="@id/nav_settings"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim"
+        app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+        app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    <action
+        android:id="@+id/global_to_position"
+        app:destination="@id/nav_position"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim"
+        app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+        app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    <action
+        android:id="@+id/global_to_locator"
+        app:destination="@id/nav_locator"
+        app:enterAnim="@anim/nav_default_enter_anim"
+        app:exitAnim="@anim/nav_default_exit_anim"
+        app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+        app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+</navigation>
