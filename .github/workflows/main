@@ -6,7 +6,7 @@ on:
       version:
         description: 'Release version (e.g., v3.2.2)'
         required: true
-        default: 'v3.2.2'
+        default: 'v4.0.1'
         type: string
 
 jobs:
