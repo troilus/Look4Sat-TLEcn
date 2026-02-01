@@ -33,7 +33,6 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew clean assembleRelease
-
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
         id: sign_apk
@@ -50,7 +49,6 @@ jobs:
           ls -lh app/build/outputs/apk/release/
           # 重命名为包含版本号的文件名
           mv app/build/outputs/apk/release/app-release-unsigned-signed.apk app/build/outputs/apk/release/look4sat-${{ github.event.inputs.version }}.apk
-
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -66,9 +64,4 @@ jobs:
           body: |
             Look4Sat ${{ github.event.inputs.version }}
             
-            ## What's New
-            - Latest satellite tracking features
-            - Bug fixes and performance improvements
-            
-            Download the signed APK file above.
           token: ${{ secrets.GITHUB_TOKEN }}
