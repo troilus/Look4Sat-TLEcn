@@ -11,7 +11,7 @@ android {
     namespace = "com.rtbishop.look4sat"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.rtbishop.look4sat"
+        applicationId = "com.rtbishop_xanyi.look4sat"
         minSdk = 24
         versionCode = 401
         versionName = "4.0.1"
