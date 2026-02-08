@@ -1,176 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Look4Sat</string>
-    <string name="app_timer">00:00:00</string>
-    <string name="app_version">Версия: %s</string>
-    <string name="app_subtitle">Трекер спутников для Android</string>
-
-    <!--Buttons-->
-
-    <string name="btn_add">Добавить</string>
+    <!-- Commmon -->
     <string name="btn_accept">Принять</string>
     <string name="btn_cancel">Отменить</string>
-    <string name="btn_back">Назад</string>
-    <string name="btn_modes">Режимы</string>
-    <string name="btn_select">Выбрать</string>
-    <string name="btn_done">Готово</string>
-    <string name="btn_clear">Очистить</string>
-    <string name="btn_clear_all">Очистить</string>
-    <string name="btn_refresh">Обновить</string>
-    <string name="btn_map">Карта</string>
-    <string name="btn_filter">Фильтр</string>
-    <string name="btn_satellites">Спутники</string>
-    <string name="btn_settings">Настройки</string>
-    <string name="btn_prev">Пред</string>
-    <string name="btn_next">След</string>
-    <string name="btn_notify">Уведомить</string>
-    <string name="btn_gps">GPS</string>
-    <string name="btn_manual">Ввести</string>
-    <string name="btn_qth">QTH</string>
-    <string name="btn_web">Онлайн</string>
-    <string name="btn_import">Импорт</string>
-    <string name="btn_github">GitHub</string>
-    <string name="btn_support">Поддержать</string>
-    <string name="btn_fdroid">F-Droid</string>
+    <string name="empty_list_message">Нет данных для отображения</string>
 
-    <!--Dialogs-->
+    <!-- Navigation -->
+    <string name="nav_sat">Спутники</string>
+    <string name="nav_pass">Пролеты</string>
+    <string name="nav_radar">Радар</string>
+    <string name="nav_map">Карта</string>
+    <string name="nav_prefs">Настройки</string>
 
-    <string name="filter_title">Фильтровать пролеты</string>
-    <string name="filter_hours_hint">Количество часов</string>
-    <string name="filter_hours_text">Показать пролеты за след. Х часов</string>
-    <string name="filter_elev_hint">Минимальная элевация</string>
-    <string name="filter_elev_text">Показать пролеты с элевацией более</string>
+    <!-- Satellites screen -->
+    <string name="sat_type_hint">Тип: %s</string>
+    <string name="sat_type_title">Выберите тип спутника</string>
+    <string name="sat_search_hint">Id - Название</string>
+    <string name="sat_search_clear">Очистить</string>
+    <string name="sat_clear_all">Очистить</string>
+    <string name="sat_select_all">Выбрать</string>
+    <string name="sat_empty_list_message">Убедитесь, что ваш поисковый запрос верен и база данных обновлена</string>
+    <string name="sat_warning_title">Внимание\!</string>
+    <string name="sat_warning_message">
+        В этом приложении перечислено более 9000 спутников.
+        Отслеживать их все одновременно бессмысленно.
+        \n\nВсегда старайтесь сузить список до тех,
+        которые вас интересуют, используя поиск и селектор типов.</string>
 
-    <string name="locator_title">Настройки локатора QTH</string>
-    <string name="locator_text">Установить позицию используя локатор</string>
-    <string name="locator_hint">QTH</string>
-
-    <string name="modes_title">Выберите тип модуляции</string>
-
-    <string name="position_title">Настройки местоположения</string>
-    <string name="position_lat_text">Установите широту наземной станции</string>
-    <string name="position_lat_hint">Широта</string>
-    <string name="position_lon_text">Установите долготу наземной станции</string>
-    <string name="position_lon_hint">Долгота</string>
-
-    <string name="sources_title">Источники данных</string>
-    <string name="sources_hint">Протокол HTTPS</string>
-
-    <string name="types_title">Выберите тип спутника</string>
-    <string name="types_message">Выбран тип: %s</string>
-
-    <!--Fragments-->
-
-    <string name="entries_search_hint">Поиск по Имени / Id</string>
-
-    <string name="passes_error">Нет предстоящих пролётов спутников</string>
-    <string name="passes_empty_db">Пожалуйста, обновите базу данных спутников через меню Настроек</string>
-
-    <string name="pass_satName">%s</string>
-    <string name="pass_satId">Id:%d</string>
-    <string name="pass_aosAz">НПС - %.1f°</string>
+    <!-- Passes screen -->
+    <string name="pass_filter_title">Фильтровать пролеты</string>
+    <string name="pass_filter_elev">Минимальная элевация</string>
+    <string name="pass_filter_hours">Количество часов</string>
+    <string name="pass_modes_title">Выберите тип модуляции</string>
     <string name="pass_elevation">Элевация: %.1f°</string>
-    <string name="pass_los">%.1f° - КПС</string>
-    <string name="pass_altitude">Высота: %.0fкм</string>
-    <string name="pass_placeholder"> - - : - - </string>
-    <string name="pass_startTime">HH:mm:ss - EEE</string>
-    <string name="pass_endTime">EEE - HH:mm:ss</string>
+    <string name="pass_altitude">Высота: %d км</string>
+    <string name="pass_empty_list_message">
+        Убедитесь, что ваши фильтры настроены правильно и вы выбрали спутники</string>
+    <string name="pass_error_message">Нет предстоящих пролётов спутников</string>
+    <string name="pass_welcome_title">Добро пожаловать в Look4Sat\!</string>
+    <string name="pass_welcome_message">
+        Обязательно укажите свое местоположение по GPS, широте/долготе или QTH в настройках.
+        \n\nПожалуйста, обновляйте базу данных как минимум раз в неделю, чтобы получать точные прогнозы.</string>
 
+    <!-- Radar screen -->
+    <string name="radar_back">Назад</string>
+    <string name="radar_notify">Уведомить</string>
     <string name="radar_az_text">Азим.</string>
-    <string name="radar_az_value">%.1f°</string>
     <string name="radar_el_text">Элев.</string>
-    <string name="radar_el_value">%.1f°</string>
     <string name="radar_alt_text">Выс.</string>
-    <string name="radar_alt_value">%.0f km</string>
     <string name="radar_dist_text">Дальн.</string>
-    <string name="radar_dist_value">%.0f km</string>
-    <string name="radar_visible">Видимый</string>
     <string name="radar_eclipsed">В тени</string>
-    <string name="radar_sat_name">%s</string>
-    <string name="radar_sat_id">Id:%d</string>
+    <string name="radar_downlink">Нисходящий канал</string>
+    <string name="radar_uplink">Восходящий канал</string>
+    <string name="radar_no_data">У этого спутника нет трансиверов</string>
+    <string name="radar_add">Добавить</string>
+    <string name="radar_data">Трансиверы спутника:</string>
+    <string name="radar_inverted">Инверсия: %s</string>
+    <string name="radar_mode">Модуляция: %s</string>
+    <string name="radar_string_no">Нет</string>
+    <string name="radar_string_yes">Да</string>
+    <string name="radar_visible">Видимый</string>
 
-    <string name="radio_mode">Модуляция: %s</string>
-    <string name="radio_inverted">Инверсия: %s</string>
-    <string name="radio_info">%s</string>
-    <string name="radio_no_link">- - . - -</string>
-    <string name="radio_link_low">%.4f</string>
-    <string name="radio_link_lowHigh">%.4f - %.4f</string>
-    <string name="radio_data">Трансиверы спутника:</string>
-    <string name="radio_no_data">У этого спутника нет трансиверов</string>
-    <string name="radio_string_yes">Да</string>
-    <string name="radio_string_no">Нет</string>
-    <string name="radio_downlink">Даунлинк</string>
-    <string name="radio_uplink">Аплинк</string>
-
-    <string name="map_title">Карта Мира</string>
-    <string name="map_sat_name">%s</string>
-    <string name="map_sat_id">Id:%d</string>
+    <!-- Map screen -->
+    <string name="map_prev">Предыдущий</string>
+    <string name="map_next">Следующий</string>
     <string name="map_azimuth">Азимут: %.1f°</string>
     <string name="map_elevation">Элевация: %.1f°</string>
-    <string name="map_latitude">Широта: %.1f°</string>
-    <string name="map_longitude">Долгота: %.1f°</string>
-    <string name="map_qth">QTH Локатор: %s</string>
-    <string name="map_visible">Видимый</string>
-    <string name="map_eclipsed">В тени</string>
-    <string name="map_visibility">Видимость: %s</string>
-    <string name="map_period">Период: %.0fмин</string>
-    <string name="map_phase">Фаза: %.1f°</string>
     <string name="map_altitude">Высота: %.0fкм</string>
     <string name="map_distance">Дистанция: %.0fкм</string>
+    <string name="map_latitude">Широта: %.1f°</string>
+    <string name="map_longitude">Долгота: %.1f°</string>
+    <string name="map_phase">Фаза: %.1f°</string>
+    <string name="map_eclipsed">В тени</string>
+    <string name="map_period">Период: %.0fмин</string>
     <string name="map_velocity">Скорость: %.2fкм/с</string>
-    <string name="map_copyright">Wikimedia maps | Map data © OpenStreetMap contributors</string>
+    <string name="map_visibility">Видимость: %s</string>
+    <string name="map_visible">Видимый</string>
 
-    <!--Cards-->
+    <!-- Settings screen -->
+    <string name="prefs_donate_title">Поддержать</string>
+    <string name="prefs_privacy_title">Политика конфиденциальности</string>
 
-    <string name="location_title">Местоположение</string>
-    <string name="location_lat">Широта: %.4f°</string>
-    <string name="location_lon">Долгота: %.4f°</string>
-    <string name="location_null">Нет данных геолокации</string>
-    <string name="location_gps_error">Нет разрешения использовать геоданные</string>
-    <string name="location_manual_error">Введены неверные данные</string>
-    <string name="location_qth_error">Неправильный локатор QTH</string>
-    <string name="location_success">Позиция успешно обновлена</string>
+    <string name="prefs_updated_title">Обновлено: %s</string>
+    <string name="prefs_updated_time">d MMM yyyy - HH:mm:ss</string>
 
-    <string name="data_title">Обновление данных</string>
-    <string name="data_error">При обновлении возникли ошибки</string>
-    <string name="data_update">Обновлено: %s</string>
-    <string name="data_entries">Спутников: %s</string>
-    <string name="data_radios">Трансиверов: %s</string>
-    <string name="data_success">Обновление прошло успешно</string>
-    <string name="data_clear_success">Очистка прошла успешно</string>
+    <string name="prefs_loc_title">Местоположение</string>
+    <string name="prefs_loc_gps_title">GPS</string>
+    <string name="prefs_loc_gps_error">Нет разрешения использовать геоданные</string>
+    <string name="prefs_loc_input_title">Ввести</string>
+    <string name="prefs_loc_input_error">Введены неверные данные</string>
+    <string name="prefs_loc_qth_title">QTH</string>
+    <string name="prefs_loc_qth_error">Неправильный локатор QTH</string>
+    <string name="prefs_loc_success">Позиция успешно обновлена</string>
+    <string name="prefs_station_title">Настройки местоположения</string>
+    <string name="prefs_station_lat_text">Введите широту наземной станции</string>
+    <string name="prefs_station_lon_text">Введите долготу наземной станции</string>
+    <string name="prefs_locator_title">Настройки локатора QTH</string>
+    <string name="prefs_locator_text">Введите позицию через локатор</string>
 
-    <string name="remote_title">Настройки ротатора</string>
-    <string name="remote_switch">Удаленное управление</string>
-    <string name="remote_ip_hint">IP адрес</string>
-    <string name="remote_port_hint">Порт</string>
+    <string name="prefs_data_title">Данные спутников</string>
+    <string name="prefs_data_entries">Спутников: %s</string>
+    <string name="prefs_data_radios">Трансиверов: %s</string>
+    <string name="prefs_data_update">Обновить</string>
+    <string name="prefs_data_import">Импорт</string>
+    <string name="prefs_data_clear">Очистить</string>
+    <string name="prefs_data_clear_success">Очистка прошла успешно</string>
+    <string name="prefs_data_update_success">Обновление прошло успешно</string>
 
-    <string name="BTremote_title">Передача данных по Bluetooth</string>
-    <string name="BTremote_switch">Включить передачу</string>
-    <string name="BTremote_device_hint">Id устройства</string>
-    <string name="BTremote_output_hint">Формат данных</string>
-    <string name="BTremote_perm_error">Нет разрешения использовать bluetooth</string>
+    <string name="prefs_data_sources_title">Свои источники данных</string>
+    <string name="prefs_data_sources_tle_switch">Custom TLE URL</string>
+    <string name="prefs_data_sources_transceivers_switch">Custom Transceivers URL</string>
 
-    <string name="other_title">Другие настройки</string>
-    <string name="other_switch_utc">Показывать время по UTC</string>
-    <string name="other_switch_update">Обновлять данные автоматически</string>
-    <string name="other_switch_sweep">Показывать анимацию радара</string>
-    <string name="other_switch_sensors">Использовать сенсоры устройства</string>
+    <string name="prefs_net_title">Вывод сетевых данных</string>
+    <string name="prefs_net_switch">Включить вывод</string>
+    <string name="prefs_net_ip_hint">IP адрес</string>
+    <string name="prefs_net_port_hint">Порт</string>
 
-    <string name="outro_title">Я хотел бы сказать спасибо:</string>
-    <string name="outro_thanks"> • Вам за использование этого приложения! \nЖелаю всегда чистого неба над головой!
-        \n • <a href="https://github.com/g4dpz">David A. B. Johnson</a> и
-        <a href="https://github.com/davidmoten">Dave Moten</a> за работу над predict4java и доступ
-        к ней по <a href="https://gnu.org/licenses/old-licenses/gpl-2.0.en.html">GNU GPLv2</a>
-        \n • <a href="https://github.com/csete">Alexandru Csete</a> за его программу
-        Gpredict, которая послужила для меня вдохновением.
-        \n • <a href="https://celestrak.com/webmaster.php">Доктору T.S. Kelso</a> за его сайт
-        <a href="https://celestrak.com/">Celestrak</a> и доступ к файлам орбит Two-Line Element.
-        \n • <a href="https://libre.space/">Libre Space Foundation</a> за проект
-        <a href="https://db.satnogs.org/">SatNOGS</a>, API и базу данных с информацией о спутниках.
-        \n • <a href="https://appoftheday.downloadastro.com/app/look4sat-satellite-tracker/">DownloadAstro</a>
-        за интерес к приложению и публикацию интервью на сайте.
-    </string>
-    <string name="outro_license"><a href="https://sites.google.com/view/look4sat-privacy-policy/home">Политика конфиденциальности.</a>
-        \nЭто ПО поставляется без гарантий. \nПодробности в лицензии <a href="https://www.gnu.org/licenses/gpl-3.0.html">GNU GPLv3</a>.
-    </string>
+    <string name="prefs_bt_title">Вывод данных Bluetooth</string>
+    <string name="prefs_bt_switch">Включить вывод</string>
+    <string name="prefs_bt_device_hint">Id устройства</string>
+    <string name="prefs_bt_output_hint">Формат данных</string>
+    <string name="prefs_bt_perm_error">Нет разрешения использовать bluetooth</string>
+
+    <string name="prefs_other_title">Другие настройки</string>
+    <string name="prefs_other_switch_utc">Показывать время по UTC</string>
+    <string name="prefs_other_switch_update">Обновлять данные автоматически</string>
+    <string name="prefs_other_switch_sweep">Показывать анимацию радара</string>
+    <string name="prefs_other_switch_sensors">Использовать сенсоры устройства</string>
+
+    <string name="prefs_outro_title">Я хотел бы сказать спасибо:</string>
+    <string name="prefs_outro_license">Это ПО поставляется без гарантий.</string>
+
 </resources>
