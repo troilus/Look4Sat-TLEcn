@@ -46,6 +46,7 @@ object Sources {
         "Swarm" to "https://tle.xanyi.eu.org/https://celestrak.org/NORAD/elements/gp.php?GROUP=swarm&FORMAT=csv",
         "Weather" to "https://tle.xanyi.eu.org/https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=csv",
         "X-Comm" to "https://tle.xanyi.eu.org/https://celestrak.org/NORAD/elements/gp.php?GROUP=x-comm&FORMAT=csv",
-        "Amsat" to "https://tle.xanyi.eu.org/https://amsat.org/tle/current/nasabare.txt"
+        "Amsat" to "https://tle.xanyi.eu.org/https://amsat.org/tle/current/nasabare.txt",
+        "Other" to "" // key for sats filter
     )
 }

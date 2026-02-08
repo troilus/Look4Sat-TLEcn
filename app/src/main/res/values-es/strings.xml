@@ -108,6 +108,10 @@
     <string name="prefs_data_clear_success">Datos eliminados con éxito</string>
     <string name="prefs_data_update_success">Actualización completada con éxito</string>
 
+    <string name="prefs_data_sources_title">Custom data sources</string>
+    <string name="prefs_data_sources_tle_switch">Custom TLE URL</string>
+    <string name="prefs_data_sources_transceivers_switch">Custom transceivers URL</string>
+
     <string name="prefs_net_title">Salida de datos de red</string>
     <string name="prefs_net_switch">Habilitar salida</string>
     <string name="prefs_net_ip_hint">Dirección IP</string>

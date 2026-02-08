@@ -27,6 +27,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.rtbishop.look4sat.R
 import com.rtbishop.look4sat.presentation.MainTheme
 import com.rtbishop.look4sat.presentation.common.SharedDialog
+import com.rtbishop.look4sat.presentation.common.CardButton
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Switch
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import com.rtbishop.look4sat.presentation.LocalSpacing
 
 @Preview(showBackground = true)
 @Composable
@@ -41,10 +54,16 @@ fun PositionDialog(lat: Double, lon: Double, dismiss: () -> Unit, save: (Double,
     val titleText = stringResource(id = R.string.prefs_station_title)
     val onAccept = { saveValues(latValue.value, lonValue.value, save).also { dismiss() } }
     SharedDialog(title = titleText, onCancel = dismiss, onAccept = onAccept) {
-        Text(text = stringResource(id = R.string.prefs_station_lat_text))
-        OutlinedTextField(value = latValue.value, onValueChange = { latValue.value = it })
-        Text(text = stringResource(id = R.string.prefs_station_lon_text))
-        OutlinedTextField(value = lonValue.value, onValueChange = { lonValue.value = it })
+        OutlinedTextField(
+            value = latValue.value,
+            onValueChange = { latValue.value = it },
+            label = { Text(text = stringResource(id = R.string.prefs_station_lat_text)) }
+        )
+        OutlinedTextField(
+            value = lonValue.value,
+            onValueChange = { lonValue.value = it },
+            label = { Text(text = stringResource(id = R.string.prefs_station_lon_text)) }
+        )
     }
 }
 
@@ -67,7 +86,116 @@ fun LocatorDialog(qthLocator: String, dismiss: () -> Unit, save: (String) -> Uni
     val locator = rememberSaveable { mutableStateOf(qthLocator) }
     val onAccept = { save(locator.value).also { dismiss() } }
     SharedDialog(title = stringResource(R.string.prefs_locator_title), onCancel = dismiss, onAccept = onAccept) {
-        Text(text = stringResource(id = R.string.prefs_locator_text))
-        OutlinedTextField(value = locator.value, onValueChange = { locator.value = it })
+        OutlinedTextField(
+            value = locator.value,
+            onValueChange = { locator.value = it },
+            label = { Text(text = stringResource(id = R.string.prefs_locator_text)) }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TransceiversDialogPreview() {
+    MainTheme {
+        DataSourcesDialog(
+            useCustomTle = true,
+            useCustomTransceivers = true,
+            tleUrl = "https://example.com/tle.txt",
+            transceiversUrl = "https://example.com/tx.json",
+            onImportTle = {},
+            onImportTransceivers = {},
+            onDismiss = {},
+            onSave = { _, _, _, _ -> }
+        )
+    }
+}
+
+@Composable
+fun DataSourcesDialog(
+    useCustomTle: Boolean,
+    useCustomTransceivers: Boolean,
+    tleUrl: String,
+    transceiversUrl: String,
+    onImportTle: () -> Unit,
+    onImportTransceivers: () -> Unit,
+    onDismiss: () -> Unit,
+    onSave: (Boolean, Boolean, String, String) -> Unit
+) {
+    val padding = LocalSpacing.current.large
+    val isEnabledCustomTle = rememberSaveable { mutableStateOf(useCustomTle) }
+    val isEnabledCustomTransceivers = rememberSaveable { mutableStateOf(useCustomTransceivers) }
+    val urlTle = rememberSaveable { mutableStateOf(tleUrl) }
+    val urlTransceivers = rememberSaveable { mutableStateOf(transceiversUrl) }
+    val onAccept = {
+        onSave(isEnabledCustomTle.value, isEnabledCustomTransceivers.value, urlTle.value, urlTransceivers.value)
+        onDismiss()
+    }
+    val onCancel = { onDismiss() }
+    SharedDialog(
+        title = stringResource(id = R.string.prefs_data_sources_title),
+        onCancel = onCancel,
+        onAccept = onAccept,
+    ) {
+        Column(modifier = Modifier.padding(horizontal = padding)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                CardButton(
+                    onClick = {
+                        onImportTle()
+                        onDismiss()
+                    },
+                    text = "TLE (3LE)\nR4UAB (.txt)",
+                    modifier = Modifier.weight(1f)
+                )
+                CardButton(
+                    onClick = {
+                        onImportTransceivers()
+                        onDismiss()
+                    },
+                    text = "Transceivers\nSatNOGS (.json)",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(id = R.string.prefs_data_sources_tle_switch))
+                Switch(
+                    checked = isEnabledCustomTle.value,
+                    onCheckedChange = { isEnabledCustomTle.value = it }
+                )
+            }
+            OutlinedTextField(
+                value = urlTle.value,
+                onValueChange = { urlTle.value = it },
+                label = { Text(text = stringResource(id = R.string.prefs_data_sources_url_title)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isEnabledCustomTle.value,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = stringResource(id = R.string.prefs_data_sources_transceivers_switch))
+                Switch(
+                    checked = isEnabledCustomTransceivers.value,
+                    onCheckedChange = { isEnabledCustomTransceivers.value = it }
+                )
+            }
+            OutlinedTextField(
+                value = urlTransceivers.value,
+                onValueChange = { urlTransceivers.value = it },
+                label = { Text(text = stringResource(id = R.string.prefs_data_sources_url_title)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isEnabledCustomTransceivers.value,
+            )
+        }
     }
 }

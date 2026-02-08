@@ -112,8 +112,11 @@ private fun SettingsScreen(uiState: SettingsState) {
         }
     }
     val contentContract = ActivityResultContracts.GetContent()
-    val contentRequest = rememberLauncherForActivityResult(contentContract) { uri ->
-        uri?.let { uiState.sendAction(SettingsAction.UpdateFromFile(uri.toString())) }
+    val contentRequestForTle = rememberLauncherForActivityResult(contentContract) { uri ->
+        uri?.let { uiState.sendAction(SettingsAction.UpdateTLEFromFile(uri.toString())) }
+    }
+    val contentRequestForTransceivers = rememberLauncherForActivityResult(contentContract) { uri ->
+        uri?.let { uiState.sendAction(SettingsAction.UpdateTransceiversFromFile(uri.toString())) }
     }
 
     // Position settings
@@ -137,10 +140,39 @@ private fun SettingsScreen(uiState: SettingsState) {
         LocatorDialog(posSettings.stationPos.qthLocator, showLocDialog, setQthPos)
     }
 
+    // Data sources dialog
+    val dataSourcesDialogState = rememberSaveable { mutableStateOf(false) }
+    val showDataSourcesDialog = { dataSourcesDialogState.value = true }
+    val dismissDataSourcesDialog = { dataSourcesDialogState.value = false }
+    if (dataSourcesDialogState.value) {
+        DataSourcesDialog(
+            useCustomTle = uiState.dataSourcesSettings.useCustomTLE,
+            useCustomTransceivers = uiState.dataSourcesSettings.useCustomTransceivers,
+            tleUrl = uiState.dataSourcesSettings.tleUrl,
+            transceiversUrl = uiState.dataSourcesSettings.transceiversUrl,
+            onImportTle = { contentRequestForTle.launch("*/*") },
+            onImportTransceivers = { contentRequestForTransceivers.launch("*/*") },
+            onDismiss = dismissDataSourcesDialog,
+            onSave = {
+                useCustomTle, useCustomTransceivers, tleUrl, transceiversUrl  ->
+                if (!useCustomTle || tleUrl.isNotBlank()) {
+                    uiState.sendDataSourcesAction(DataSourcesAction.SetUseCustomTle(useCustomTle))
+                    uiState.sendDataSourcesAction(DataSourcesAction.SetTleUrl(tleUrl))
+                }
+                if (!useCustomTransceivers || transceiversUrl.isNotBlank()) {
+                    uiState.sendDataSourcesAction(DataSourcesAction.SetUseCustomTransceivers(useCustomTransceivers))
+                    uiState.sendDataSourcesAction(DataSourcesAction.SetTransceiversUrl(transceiversUrl))
+                }
+                if (useCustomTle || useCustomTransceivers) {
+                    uiState.sendAction(SettingsAction.UpdateFromWeb)
+                }
+            }
+        )
+    }
+
     // Data settings
     val dataSettings = uiState.dataSettings
     val updateFromWeb: () -> Unit = { uiState.sendAction(SettingsAction.UpdateFromWeb) }
-    val updateFromFile = { contentRequest.launch("*/*") }
     val clearAllData: () -> Unit = { uiState.sendAction(SettingsAction.ClearAllData) }
 
     // RC settings
@@ -209,7 +241,7 @@ private fun SettingsScreen(uiState: SettingsState) {
             item {
                 LocationCard(posSettings, setGpsPos, showPosDialog, showLocDialog, dismissPos, uiState.sendSystemAction)
             }
-            item { DataCard(dataSettings, updateFromWeb, updateFromFile, clearAllData) }
+            item { DataCard(dataSettings, updateFromWeb, clearAllData, showDataSourcesDialog) }
             item { NetworkOutputCard(rcSettings, setRotatorState, setRotatorAddress, setRotatorPort) }
             item { BluetoothOutputCard(rcSettings, setBluetoothState, setBluetoothAddress, setBluetoothFormat) }
             item { OtherCard(otherSettings, toggleUtc, toggleUpdate, toggleSweep, toggleSensor) }
@@ -290,15 +322,15 @@ private fun LocationCard(
 @Composable
 private fun DataCardPreview() = MainTheme {
     val settings = DataSettings(true, 5000, 2500, 0L)
-    DataCard(settings = settings, {}, {}) {}
+    DataCard(settings = settings, {}, {}, {})
 }
 
 @Composable
 private fun DataCard(
     settings: DataSettings,
     updateFromWeb: () -> Unit,
-    updateFromFile: () -> Unit,
-    clearAllData: () -> Unit
+    clearAllData: () -> Unit,
+    showDataSourcesDialog: () -> Unit
 ) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -320,21 +352,19 @@ private fun DataCard(
                 Text(text = stringResource(R.string.prefs_data_radios, settings.radiosTotal))
             }
             Spacer(modifier = Modifier.height(1.dp))
-            Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 CardButton(
-                    onClick = { updateFromWeb() },
+                    onClick = updateFromWeb,
                     text = stringResource(id = R.string.prefs_data_update),
                     modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
                 CardButton(
-                    onClick = { updateFromFile() },
+                    onClick = showDataSourcesDialog,
                     text = stringResource(id = R.string.prefs_data_import),
                     modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
                 CardButton(
-                    onClick = { clearAllData() },
+                    onClick = clearAllData,
                     text = stringResource(id = R.string.prefs_data_clear),
                     modifier = Modifier.weight(1f)
                 )

@@ -56,7 +56,7 @@ jobs:
         with:
           name: look4sat-apk
           path: app/build/outputs/apk/release/look4sat-${{ github.event.inputs.version }}.apk
-
+          
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:

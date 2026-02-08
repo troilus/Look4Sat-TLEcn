@@ -4,7 +4,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 android {
@@ -13,8 +13,8 @@ android {
     defaultConfig {
         applicationId = "com.rtbishop_xanyi.look4sat"
         minSdk = 24
-        versionCode = 401
-        versionName = "4.0.1"
+        versionCode = 402
+        versionName = "4.0.2"
     }
     buildFeatures {
         compose = true

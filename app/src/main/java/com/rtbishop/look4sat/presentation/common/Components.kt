@@ -23,6 +23,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -210,8 +211,9 @@ fun CardButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier)
         onClick = { onClick() }, colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ), shape = MaterialTheme.shapes.small, modifier = modifier
-    ) { Text(text = text, fontSize = 17.sp) }
+        ), shape = MaterialTheme.shapes.small, modifier = modifier,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+    ) { Text(text = text, fontSize = 16.sp, textAlign = TextAlign.Center) }
 }
 
 @Composable
@@ -253,7 +255,7 @@ fun EmptyListCard(message: String) {
             modifier = Modifier.padding(32.dp)
         ) {
             Text(text = """¯\_(ツ)_/¯""", fontSize = 32.sp)
-            Text(text = stringResource(R.string.empty_list_message), fontSize = 21.sp)
+            Text(text = stringResource(R.string.empty_list_message), fontSize = 21.sp, textAlign = TextAlign.Center)
             Text(text = message, fontSize = 18.sp, textAlign = TextAlign.Center)
         }
     }
@@ -278,7 +280,7 @@ fun SharedDialog(
             ) {
                 Text(
                     text = title,
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = padding, top = padding, end = padding)
