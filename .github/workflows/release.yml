@@ -1,38 +1,36 @@
-name: Look4Sat Release-CN
+name: release
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., v3.2.2)'
-        required: true
-        default: 'v3.2.2'
-        type: string
+  push:
+    tags:
+      - v**
+
+env:
+  TAG_NAME: ${{ github.ref_name }}
+  GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
 jobs:
-  deploy:
+  release:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v6
 
-      - name: Setup Java environment
-        uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
 
-      - name: Install build tools
-        run: sdkmanager "build-tools;29.0.3"
-
-      - name: Build Release APK
+      - name: Assemble Artifacts
         run: |
-          chmod +x ./gradlew
-          ./gradlew clean assembleRelease
+          ./gradlew assembleRelease
+          ./gradlew bundleRelease
 
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
@@ -43,32 +41,36 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           alias: ${{ secrets.KEY_ALIAS }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-      
-      - name: Rename Signed APK with Version
-        run: |
-          echo "Listing signed APKs:"
-          ls -lh app/build/outputs/apk/release/
-          # 重命名为包含版本号的文件名
-          mv app/build/outputs/apk/release/app-release-unsigned-signed.apk app/build/outputs/apk/release/look4sat-${{ github.event.inputs.version }}.apk
+        env:
+          BUILD_TOOLS_VERSION: "36.0.0"
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Sign Bundle
+        uses: r0adkll/sign-android-release@v1
+        id: sign_bundle
         with:
-          name: look4sat-apk
-          path: app/build/outputs/apk/release/look4sat-${{ github.event.inputs.version }}.apk
-          
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+          releaseDirectory: app/build/outputs/bundle/release
+          signingKeyBase64: ${{ secrets.KEY_STORE }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "36.0.0"
+
+      - name: Rename Artifacts
+        run: |
+          mv ${{steps.sign_apk.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.apk
+          mv ${{steps.sign_bundle.outputs.signedReleaseFile}} app/build/outputs/apk/release/look4sat.aab
+
+      - name: Deploy Bundle
+        uses: r0adkll/upload-google-play@v1
         with:
-          tag: ${{ github.event.inputs.version }}
-          name: Look4Sat ${{ github.event.inputs.version }}
-          artifacts: "app/build/outputs/apk/release/look4sat-${{ github.event.inputs.version }}.apk"
-          body: |
-            Look4Sat ${{ github.event.inputs.version }}
-            
-            ## What's New
-            - Latest satellite tracking features
-            - Bug fixes and performance improvements
-            
-            Download the signed APK file above.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          serviceAccountJsonPlainText: ${{secrets.SERVICE_ACCOUNT_JSON}}
+          packageName: com.rtbishop.look4sat
+          releaseFiles: app/build/outputs/apk/release/look4sat.aab
+          track: production
+          whatsNewDirectory: fastlane/metadata/android/en-US/whatsnew
+
+      - name: Create Release
+        run: |
+          gh release create $TAG_NAME --title=$TAG_NAME --generate-notes
+          gh release upload $TAG_NAME app/build/outputs/apk/release/look4sat.apk
