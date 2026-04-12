@@ -11,6 +11,7 @@ minSdk = "24"
 jdkVersion = "17"
 #noinspection UnusedVersionCatalogEntry
 packageName = "com.rtbishop.look4sat"
+xanyipackageName = "com.rtbishop_xanyi.look4sat"
 
 android-gradle-plugin = "9.1.0"
 google-ksp = "2.3.6"
