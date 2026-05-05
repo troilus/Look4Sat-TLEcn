@@ -18,15 +18,15 @@
 package com.rtbishop.look4sat.feature.map
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.rtbishop.look4sat.core.domain.predict.CelestialComputer
 import com.rtbishop.look4sat.core.domain.predict.GeoPos
 import com.rtbishop.look4sat.core.domain.predict.OrbitalObject
 import com.rtbishop.look4sat.core.domain.predict.OrbitalPass
 import com.rtbishop.look4sat.core.domain.predict.OrbitalPos
-import com.rtbishop.look4sat.core.domain.repository.IContainerProvider
+import com.rtbishop.look4sat.core.domain.repository.IMainContainer
 import com.rtbishop.look4sat.core.domain.repository.ISatelliteRepo
 import com.rtbishop.look4sat.core.domain.repository.ISettingsRepo
 import com.rtbishop.look4sat.core.domain.utility.clipLat
@@ -49,8 +49,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Date
 
-class MapViewModel(private val satelliteRepo: ISatelliteRepo, private val settingsRepo: ISettingsRepo) :
-    ViewModel() {
+class MapViewModel(
+    private val satelliteRepo: ISatelliteRepo,
+    private val settingsRepo: ISettingsRepo
+) : ViewModel() {
 
     private val stationPos = settingsRepo.stationPosition.value
     private val defaultPass = getDefaultPass()
@@ -177,10 +179,12 @@ class MapViewModel(private val satelliteRepo: ISatelliteRepo, private val settin
             }
         }
 
-        // 2. Derive footprint and info data from the already-computed selected position
+        // 2. Derive footprint, info data, sun and moon position from already-computed state
         val satPos = selectedSatPos ?: satelliteRepo.getPosition(selected, pos, date.time)
         val footprint = satPos
         val mapData = buildMapData(selected, satPos, date)
+        val sunPos = CelestialComputer.getSunPosition(stationPos, date.time)
+        val moonPos = CelestialComputer.getMoonPosition(stationPos, date.time)
 
         // 3. Single atomic state update — one recomposition per cycle
         _uiState.update {
@@ -188,7 +192,11 @@ class MapViewModel(private val satelliteRepo: ISatelliteRepo, private val settin
                 positions = positionsMap,
                 footprint = footprint,
                 mapData = mapData.first,
-                orbitalPass = mapData.second
+                orbitalPass = mapData.second,
+                sunLatDeg = sunPos.latitude,
+                sunLonDeg = sunPos.longitude,
+                moonLatDeg = moonPos.declination, // sub-lunar latitude = declination
+                moonLonDeg = if (moonPos.gha <= 180.0) -moonPos.gha else 360.0 - moonPos.gha
             )
         }
     }
@@ -286,11 +294,12 @@ class MapViewModel(private val satelliteRepo: ISatelliteRepo, private val settin
         /** Number of parallel chunks for satellite position computation */
         private const val PARALLEL_CHUNKS = 4
 
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            val applicationKey = ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY
+        fun factory(container: IMainContainer) = viewModelFactory {
             initializer {
-                val container = (this[applicationKey] as IContainerProvider).getMainContainer()
-                MapViewModel(container.satelliteRepo, container.settingsRepo)
+                MapViewModel(
+                    satelliteRepo = container.satelliteRepo,
+                    settingsRepo = container.settingsRepo
+                )
             }
         }
     }

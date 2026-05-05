@@ -18,13 +18,13 @@
 package com.rtbishop.look4sat.feature.passes
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.rtbishop.look4sat.core.domain.model.PassesSettings
+import com.rtbishop.look4sat.core.domain.predict.CelestialComputer
 import com.rtbishop.look4sat.core.domain.predict.OrbitalPass
-import com.rtbishop.look4sat.core.domain.repository.IContainerProvider
+import com.rtbishop.look4sat.core.domain.repository.IMainContainer
 import com.rtbishop.look4sat.core.domain.repository.ISatelliteRepo
 import com.rtbishop.look4sat.core.domain.repository.ISettingsRepo
 import com.rtbishop.look4sat.core.domain.utility.round
@@ -37,6 +37,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class PassesViewModel(
     private val satelliteRepo: ISatelliteRepo,
@@ -64,34 +68,43 @@ class PassesViewModel(
                 _uiState.update { it.copy(isRefreshing = calculating) }
             }
         }
-        // Local tick loop — computes pass progress and countdown timer every second
+        // React to settings changes: update UTC flag and whatsNew
         viewModelScope.launch {
+            settingsRepo.otherSettings.collectLatest { settings ->
+                _uiState.update { it.copy(isUtc = settings.stateOfUtc, shouldSeeWhatsNew = settings.shouldSeeWhatsNew) }
+            }
+        }
+        // Local tick loop — computes pass progress, countdown timer, and per-day sun times every second
+        viewModelScope.launch {
+            var lastSunTimesKey = "" // track when we need to recompute sun times
             while (isActive) {
                 val timeNow = System.currentTimeMillis()
+                val isUtc = _uiState.value.isUtc
                 val showDeepSpace = _uiState.value.showDeepSpace
                 val allPasses = satelliteRepo.passes.value
                 val filtered = if (showDeepSpace) allPasses else allPasses.filter { !it.isDeepSpace }
                 val processed = computePassProgress(filtered, timeNow)
                 val (nextPass, nextTime, isAos) = resolveNextPass(processed, timeNow)
+
+                // Recompute per-day sun times only when passes list or UTC setting changes
+                val sunTimesKey = "${processed.firstOrNull()?.aosTime}-${processed.lastOrNull()?.aosTime}-$isUtc"
+                val sunTimes = if (sunTimesKey != lastSunTimesKey) {
+                    lastSunTimesKey = sunTimesKey
+                    computeSunTimes(processed, isUtc)
+                } else {
+                    _uiState.value.sunTimes
+                }
+
                 _uiState.update {
                     it.copy(
                         itemsList = processed,
                         nextPass = nextPass,
                         nextTime = nextTime,
-                        isNextTimeAos = isAos
+                        isNextTimeAos = isAos,
+                        sunTimes = sunTimes
                     )
                 }
                 delay(1000)
-            }
-        }
-        viewModelScope.launch {
-            settingsRepo.otherSettings.collectLatest { settings ->
-                _uiState.update {
-                    it.copy(
-                        isUtc = settings.stateOfUtc,
-                        shouldSeeWhatsNew = settings.shouldSeeWhatsNew
-                    )
-                }
             }
         }
     }
@@ -101,16 +114,40 @@ class PassesViewModel(
             PassesAction.DismissWhatsNew -> settingsRepo.setWhatsNewDismissed()
             is PassesAction.FilterPasses ->
                 applyFilter(action.hoursAhead, action.minElevation, action.showDeepSpace, _uiState.value.modes)
-
             is PassesAction.FilterRadios ->
                 applyFilter(_uiState.value.hours, _uiState.value.elevation, _uiState.value.showDeepSpace, action.modes)
             PassesAction.RefreshPasses -> refreshPasses()
             PassesAction.TogglePassesDialog ->
                 _uiState.update { it.copy(isPassesDialogShown = !it.isPassesDialogShown) }
-
             PassesAction.ToggleRadiosDialog ->
                 _uiState.update { it.copy(isRadiosDialogShown = !it.isRadiosDialogShown) }
         }
+    }
+
+    // Computes sunrise/sunset strings for each unique calendar day in the pass list, plus today for Deep Space
+    private fun computeSunTimes(passes: List<OrbitalPass>, isUtc: Boolean): Map<String, Pair<String, String>> {
+        val stationPos = settingsRepo.stationPosition.value
+        val tz = if (isUtc) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
+        val sdfDate = SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH).also { it.timeZone = tz }
+        val sdfTime = SimpleDateFormat("HH:mm", Locale.ENGLISH).also { it.timeZone = tz }
+        val result = LinkedHashMap<String, Pair<String, String>>()
+        // Deep Space group always shows today's sun times
+        if (passes.any { it.isDeepSpace }) {
+            val riseSet = CelestialComputer.findSunRiseSet(stationPos, System.currentTimeMillis())
+            val rise = if (riseSet.riseTimeMillis > 0) sdfTime.format(Date(riseSet.riseTimeMillis)) else "--:--"
+            val set = if (riseSet.setTimeMillis > 0) sdfTime.format(Date(riseSet.setTimeMillis)) else "--:--"
+            result["Deep Space"] = rise to set
+        }
+        for (pass in passes) {
+            if (pass.isDeepSpace) continue
+            val label = sdfDate.format(Date(pass.aosTime))
+            if (label in result) continue
+            val riseSet = CelestialComputer.findSunRiseSet(stationPos, pass.aosTime)
+            val rise = if (riseSet.riseTimeMillis > 0) sdfTime.format(Date(riseSet.riseTimeMillis)) else "--:--"
+            val set = if (riseSet.setTimeMillis > 0) sdfTime.format(Date(riseSet.setTimeMillis)) else "--:--"
+            result[label] = rise to set
+        }
+        return result
     }
 
     /** Computes live progress for each pass, filtering out expired ones. */
@@ -169,11 +206,12 @@ class PassesViewModel(
     }
 
     companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            val applicationKey = ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY
+        fun factory(container: IMainContainer) = viewModelFactory {
             initializer {
-                val container = (this[applicationKey] as IContainerProvider).getMainContainer()
-                PassesViewModel(container.satelliteRepo, container.settingsRepo)
+                PassesViewModel(
+                    satelliteRepo = container.satelliteRepo,
+                    settingsRepo = container.settingsRepo
+                )
             }
         }
     }

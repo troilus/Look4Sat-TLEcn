@@ -18,12 +18,11 @@
 package com.rtbishop.look4sat.feature.settings
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.rtbishop.look4sat.core.domain.repository.IContainerProvider
 import com.rtbishop.look4sat.core.domain.repository.IDatabaseRepo
+import com.rtbishop.look4sat.core.domain.repository.IMainContainer
 import com.rtbishop.look4sat.core.domain.repository.ISettingsRepo
 import com.rtbishop.look4sat.core.domain.usecase.IShowToast
 import com.rtbishop.look4sat.core.presentation.R
@@ -121,6 +120,7 @@ class SettingsViewModel(
             is SettingsAction.ToggleSweep -> settingsRepo.updateOtherSettings { it.copy(stateOfSweep = action.value) }
             is SettingsAction.ToggleSensor -> settingsRepo.updateOtherSettings { it.copy(stateOfSensors = action.value) }
             is SettingsAction.ToggleLightTheme -> settingsRepo.updateOtherSettings { it.copy(stateOfLightTheme = action.value) }
+            is SettingsAction.ToggleNightMode -> settingsRepo.updateOtherSettings { it.copy(stateOfNightMode = action.value) }
             // Remote control & data sources
             is SettingsAction.UpdateRC -> settingsRepo.updateRCSettings(action.settings)
             is SettingsAction.UpdateRadioControl -> settingsRepo.updateRadioControlSettings(action.settings)
@@ -187,14 +187,12 @@ class SettingsViewModel(
     // endregion
 
     companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            val applicationKey = ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY
+        fun factory(container: IMainContainer) = viewModelFactory {
             initializer {
-                val container = (this[applicationKey] as IContainerProvider).getMainContainer()
                 SettingsViewModel(
-                    container.databaseRepo,
-                    container.settingsRepo,
-                    container.provideShowToast()
+                    databaseRepo = container.databaseRepo,
+                    settingsRepo = container.settingsRepo,
+                    showToast = container.provideShowToast()
                 )
             }
         }

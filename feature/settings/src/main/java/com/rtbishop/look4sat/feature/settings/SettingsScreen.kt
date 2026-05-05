@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -62,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rtbishop.look4sat.core.domain.model.OtherSettings
 import com.rtbishop.look4sat.core.domain.predict.GeoPos
+import com.rtbishop.look4sat.core.domain.repository.IContainerProvider
 import com.rtbishop.look4sat.core.presentation.CardButton
 import com.rtbishop.look4sat.core.presentation.IconCard
 import com.rtbishop.look4sat.core.presentation.MainTheme
@@ -77,9 +79,11 @@ import java.util.Locale
 
 @Composable
 fun SettingsDestination() {
+    val context = LocalContext.current
+    val container = (context.applicationContext as IContainerProvider).getMainContainer()
     val viewModel = viewModel(
         modelClass = SettingsViewModel::class.java,
-        factory = SettingsViewModel.Factory
+        factory = SettingsViewModel.factory(container)
     )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SettingsScreen(uiState, viewModel::onAction)
@@ -422,6 +426,7 @@ private fun OtherCardPreview() = MainTheme {
         stateOfSweep = true,
         stateOfUtc = false,
         stateOfLightTheme = false,
+        stateOfNightMode = false,
         shouldSeeWarning = false,
         shouldSeeWhatsNew = false
     )
@@ -433,7 +438,7 @@ private fun OtherCard(settings: OtherSettings, onAction: (SettingsAction) -> Uni
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(268.dp)
     ) {
         Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
             Text(
@@ -451,6 +456,9 @@ private fun OtherCard(settings: OtherSettings, onAction: (SettingsAction) -> Uni
             }
             SwitchRow(R.string.prefs_other_switch_sensors, settings.stateOfSensors) {
                 onAction(SettingsAction.ToggleSensor(it))
+            }
+            SwitchRow(R.string.prefs_other_switch_night_mode, settings.stateOfNightMode) {
+                onAction(SettingsAction.ToggleNightMode(it))
             }
         }
     }
@@ -502,7 +510,7 @@ private fun CardCredits(modifier: Modifier = Modifier) {
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(268.dp)
     ) {
         Column(
             verticalArrangement = Arrangement.SpaceBetween,

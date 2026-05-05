@@ -56,8 +56,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.rtbishop.look4sat.core.domain.repository.IContainerProvider
 import com.rtbishop.look4sat.core.presentation.Screen
@@ -76,6 +78,8 @@ fun MainScreen() {
     val currentKey = backStack.lastOrNull()
     val navigateBack: () -> Unit = { backStack.removeAt(backStack.size - 1) }
     val fadeTransition = fadeIn(animationSpec = tween(350)) togetherWith fadeOut(animationSpec = tween(350))
+//    val slideInTransition = slideInHorizontally(initialOffsetX = { it }) togetherWith scaleOut(targetScale = 0.9f)
+//    val slideOutTransition = scaleIn(initialScale = 0.9f) togetherWith slideOutHorizontally(targetOffsetX = { it })
     val navItems = listOf(Screen.Satellites, Screen.Passes, Screen.Radar(), Screen.Map, Screen.Settings)
 
     val context = LocalContext.current
@@ -122,6 +126,12 @@ fun MainScreen() {
                 transitionSpec = { fadeTransition },
                 popTransitionSpec = { fadeTransition },
                 predictivePopTransitionSpec = { fadeTransition },
+                entryDecorators = listOf(
+                    // Required for saving Compose state per entry
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    // Required for ViewModel scoping per entry
+                    rememberViewModelStoreNavEntryDecorator()
+                ),
                 entryProvider = entryProvider {
                     entry<Screen.Satellites> {
                         SatellitesDestination(navigateUp = navigateBack)
