@@ -24,16 +24,23 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.rtbishop.look4sat.core.domain.model.SatRadio
 import com.rtbishop.look4sat.core.domain.predict.CelestialComputer
 import com.rtbishop.look4sat.core.domain.predict.OrbitalObject
+import com.rtbishop.look4sat.core.domain.predict.OrbitalPass
 import com.rtbishop.look4sat.core.domain.predict.OrbitalPos
 import com.rtbishop.look4sat.core.domain.repository.IMainContainer
+import com.rtbishop.look4sat.core.domain.repository.IRadioTrackingService
 import com.rtbishop.look4sat.core.domain.repository.IReporter
 import com.rtbishop.look4sat.core.domain.repository.ISatelliteRepo
 import com.rtbishop.look4sat.core.domain.repository.ISensorsRepo
 import com.rtbishop.look4sat.core.domain.repository.ISettingsRepo
+import com.rtbishop.look4sat.core.domain.sstv.SstvDecoder
+import com.rtbishop.look4sat.core.domain.usecase.IAudioCapture
 import com.rtbishop.look4sat.core.domain.usecase.IAddToCalendar
+import com.rtbishop.look4sat.core.domain.usecase.ISaveImage
+import com.rtbishop.look4sat.core.domain.usecase.IShowToast
 import com.rtbishop.look4sat.core.domain.utility.round
 import com.rtbishop.look4sat.core.domain.utility.toDegrees
 import com.rtbishop.look4sat.core.domain.utility.toTimerString
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +48,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class RadarViewModel(
     private val bluetoothReporter: IReporter,
@@ -48,72 +56,127 @@ class RadarViewModel(
     private val satelliteRepo: ISatelliteRepo,
     private val settingsRepo: ISettingsRepo,
     private val sensorsRepo: ISensorsRepo,
-    private val addToCalendar: IAddToCalendar
+    private val addToCalendar: IAddToCalendar,
+    private val trackingService: IRadioTrackingService,
+    private val audioCapture: IAudioCapture,
+    private val saveImage: ISaveImage,
+    private val showToast: IShowToast
 ) : ViewModel() {
 
     private val stationPos = settingsRepo.stationPosition.value
     private val magDeclination = sensorsRepo.getMagDeclination(stationPos)
+    private var transponders: List<SatRadio> = emptyList()
+    private var sstvDecoder: SstvDecoder? = null
+    private var sstvRecordingJob: Job? = null
+
     private val _uiState = MutableStateFlow(
         RadarState(
             isUtc = settingsRepo.otherSettings.value.stateOfUtc,
             orientationValues = sensorsRepo.orientation.value,
             shouldShowSweep = settingsRepo.otherSettings.value.stateOfSweep,
-            shouldUseCompass = settingsRepo.otherSettings.value.stateOfSensors
+            shouldUseCompass = settingsRepo.otherSettings.value.stateOfSensors,
+            sstv = SstvSubState(selectedMode = settingsRepo.otherSettings.value.sstvMode)
         )
     )
     val uiState: StateFlow<RadarState> = _uiState
 
     init {
-        // Compass sensor collection
-        if (settingsRepo.otherSettings.value.stateOfSensors) {
-            viewModelScope.launch {
-                sensorsRepo.enableSensor()
-                sensorsRepo.orientation.collect { data ->
-                    val orientationValues = (data.first + magDeclination) to data.second
-                    _uiState.update { it.copy(orientationValues = orientationValues) }
-                }
+        collectCompassSensor()
+        collectSettingsChanges()
+        collectPassAndStartTickLoop()
+        collectRadioTrackingState()
+    }
+
+    private fun collectCompassSensor() {
+        if (!settingsRepo.otherSettings.value.stateOfSensors) return
+        viewModelScope.launch {
+            sensorsRepo.enableSensor()
+            sensorsRepo.orientation.collect { data ->
+                val orientationValues = (data.first + magDeclination) to data.second
+                _uiState.update { it.copy(orientationValues = orientationValues) }
             }
         }
-        // React to UTC setting changes
+    }
+
+    private fun collectSettingsChanges() {
         viewModelScope.launch {
             settingsRepo.otherSettings.collectLatest { settings ->
                 _uiState.update { it.copy(isUtc = settings.stateOfUtc) }
             }
         }
-        // Resolve which pass we're tracking and start the tick loop
+    }
+
+    private fun collectPassAndStartTickLoop() {
         viewModelScope.launch {
             val passes = satelliteRepo.passes.value
             val (catNum, aosTime) = satelliteRepo.selectedPass.value
-            val satPass = passes.find { it.catNum == catNum && it.aosTime == aosTime } ?: passes.firstOrNull()
-            satPass?.let { pass ->
-                _uiState.update { it.copy(currentPass = pass) }
-                val transmitters = satelliteRepo.getRadiosWithId(pass.catNum)
-                // Compute track once (it doesn't change for a given pass)
-                if (!pass.isDeepSpace) {
-                    val track = satelliteRepo.getTrack(pass.orbitalObject, stationPos, pass.aosTime, pass.losTime)
-                    _uiState.update { it.copy(satTrack = track) }
-                }
-                // Tick loop — position, timer, and radio updates every second
-                while (isActive) {
-                    val timeNow = System.currentTimeMillis()
-                    val pos = satelliteRepo.getPosition(pass.orbitalObject, stationPos, timeNow)
-                    val sunPos = CelestialComputer.getSunPosition(stationPos, timeNow)
-                    val moonPos = CelestialComputer.getMoonPosition(stationPos, timeNow)
-                    val (time, isAos) = computeTimer(pass.isDeepSpace, pass.aosTime, pass.losTime, timeNow)
-                    val isLos = !pass.isDeepSpace && timeNow > pass.losTime
-                    _uiState.update {
-                        it.copy(
-                            currentTime = time,
-                            isTimeAos = isAos,
-                            isLos = isLos,
-                            orbitalPos = pos,
-                            sunPosition = sunPos,
-                            moonPosition = moonPos
+            val pass = passes.find { it.catNum == catNum && it.aosTime == aosTime } ?: passes.firstOrNull() ?: return@launch
+            _uiState.update { it.copy(currentPass = pass) }
+            val transmittersList = satelliteRepo.getRadiosWithId(pass.catNum)
+            transponders = transmittersList.filter { it.downlinkLow != null }
+            _uiState.update { state ->
+                state.copy(radioControl = state.radioControl.copy(transponders = transponders))
+            }
+            if (transmittersList.isNotEmpty()) {
+                val firstUuid = transmittersList.first().uuid
+                _uiState.update { it.copy(selectedTransmitterUuid = firstUuid) }
+                transponders.find { it.uuid == firstUuid }?.let { trackingService.setTransponder(it) }
+            }
+            if (!pass.isDeepSpace) {
+                val track = satelliteRepo.getTrack(pass.orbitalObject, stationPos, pass.aosTime, pass.losTime)
+                _uiState.update { it.copy(satTrack = track) }
+            }
+            while (isActive) {
+                tickPass(pass, transmittersList)
+                delay(1000)
+            }
+        }
+    }
+
+    private suspend fun tickPass(pass: OrbitalPass, transmittersList: List<SatRadio>) {
+        val timeNow = System.currentTimeMillis()
+        val pos = satelliteRepo.getPosition(pass.orbitalObject, stationPos, timeNow)
+        val sunPos = CelestialComputer.getSunPosition(stationPos, timeNow)
+        val moonPos = CelestialComputer.getMoonPosition(stationPos, timeNow)
+        val (time, isAos) = computeTimer(pass.isDeepSpace, pass.aosTime, pass.losTime, timeNow)
+        val isLos = !pass.isDeepSpace && timeNow > pass.losTime
+        _uiState.update {
+            it.copy(
+                currentTime = time, isTimeAos = isAos, isLos = isLos,
+                orbitalPos = pos, sunPosition = sunPos, moonPosition = moonPos
+            )
+        }
+        processRadios(transmittersList, pass.orbitalObject, timeNow)
+        sendPassData(pos)
+    }
+
+    private fun collectRadioTrackingState() {
+        viewModelScope.launch {
+            trackingService.state.collect { svc ->
+                _uiState.update { state ->
+                    state.copy(
+                        radioControl = state.radioControl.copy(
+                            txPanel = RadioPanelState(
+                                label = "TX (Uplink)",
+                                isConnected = svc.txConnected,
+                                frequencyHz = svc.txFrequencyHz,
+                                frequencyDisplay = svc.txFrequencyHz?.let { formatFrequency(it) } ?: "---",
+                                mode = svc.txMode
+                            ),
+                            rxPanel = RadioPanelState(
+                                label = "RX (Downlink)",
+                                isConnected = svc.rxConnected,
+                                frequencyHz = svc.rxFrequencyHz,
+                                frequencyDisplay = svc.rxFrequencyHz?.let { formatFrequency(it) } ?: "---",
+                                mode = svc.rxMode
+                            ),
+                            txBaseFrequencyHz = svc.txBaseFrequencyHz,
+                            ctcssTone = svc.ctcssTone,
+                            isTracking = svc.isActive,
+                            selectedTransponderUuid = svc.selectedTransponder?.uuid,
+                            errorMessage = svc.errorMessage
                         )
-                    }
-                    processRadios(transmitters, pass.orbitalObject, timeNow)
-                    sendPassData(pos)
-                    delay(1000)
+                    )
                 }
             }
         }
@@ -127,7 +190,68 @@ class RadarViewModel(
     fun onAction(action: RadarAction) {
         when (action) {
             is RadarAction.AddToCalendar -> addToCalendar(action.name, action.aosTime, action.losTime)
-            is RadarAction.SelectTransmitter -> _uiState.update { it.copy(selectedTransmitterUuid = action.uuid) }
+            is RadarAction.SelectTransmitter -> {
+                val previousUuid = _uiState.value.selectedTransmitterUuid
+                _uiState.update {
+                    val newUuid = if (it.selectedTransmitterUuid == action.uuid) null else action.uuid
+                    it.copy(selectedTransmitterUuid = newUuid)
+                }
+                // Also set this as the active transponder for radio tracking.
+                // Always use the original (un-Dopplered) transponders list so that the
+                // TX base frequency is computed from the clean nominal values.
+                // Only update the service when selecting a *different* transponder to
+                // avoid resetting a user-adjusted TX base on re-expand.
+                val selected = transponders.find { it.uuid == action.uuid }
+                if (selected != null && _uiState.value.selectedTransmitterUuid != null && previousUuid != action.uuid) {
+                    trackingService.setTransponder(selected)
+                }
+            }
+            is RadarAction.SelectTransponder -> {
+                val transponder = transponders.find { it.uuid == action.uuid } ?: return
+                trackingService.setTransponder(transponder)
+            }
+            is RadarAction.SetTxFrequency -> trackingService.setTxBaseFrequency(action.frequencyHz)
+            is RadarAction.AdjustTxFrequency -> trackingService.adjustTxBaseFrequency(action.deltaHz)
+            is RadarAction.SetCtcssTone -> trackingService.setCtcssTone(action.toneHz)
+            RadarAction.ToggleTracking -> {
+                val svc = trackingService.state.value
+                if (svc.isActive) {
+                    trackingService.stopTracking()
+                } else {
+                    val pass = _uiState.value.currentPass ?: return
+                    val transponder = svc.selectedTransponder ?: return
+                    trackingService.startTracking(pass, transponder, svc.txBaseFrequencyHz)
+                }
+            }
+            RadarAction.ConnectRadios -> viewModelScope.launch { trackingService.connectRadios() }
+            RadarAction.DisconnectRadios -> viewModelScope.launch { trackingService.disconnectRadios() }
+
+            // SSTV actions
+            is RadarAction.SstvPermissionResult -> {
+                _uiState.update { it.copy(sstv = it.sstv.copy(hasPermission = action.granted)) }
+                if (action.granted) initSstvDecoder()
+            }
+            RadarAction.SstvStartRecording -> startSstvRecording()
+            RadarAction.SstvStopRecording -> stopSstvRecording()
+            RadarAction.SstvSaveImage -> {
+                val frame = _uiState.value.sstv.currentFrame ?: return
+                val pixels = frame.imagePixels ?: return
+                _uiState.update { it.copy(sstv = it.sstv.copy(status = SstvStatus.Saving)) }
+                viewModelScope.launch {
+                    saveImage(pixels, frame.imageWidth, frame.imageHeight, frame.modeName)
+                    _uiState.update { it.copy(sstv = it.sstv.copy(status = SstvStatus.Idle)) }
+                    showToast("Image saved")
+                }
+            }
+            is RadarAction.SstvSelectMode -> {
+                sstvDecoder?.lockMode(action.modeName)
+                _uiState.update { it.copy(sstv = it.sstv.copy(selectedMode = action.modeName)) }
+                settingsRepo.updateOtherSettings { it.copy(sstvMode = action.modeName) }
+            }
+            RadarAction.SstvReset -> {
+                sstvDecoder?.clearPixels() // Keep decoder alive, just reset pixels
+                _uiState.update { it.copy(sstv = it.sstv.copy(currentFrame = null)) }
+            }
         }
     }
 
@@ -178,37 +302,74 @@ class RadarViewModel(
         val isFreqEnabled =
             settingsRepo.rcSettings.value.frequencyState || settingsRepo.rcSettings.value.bluetoothFrequencyState
         _uiState.update { state ->
-            if (!isFreqEnabled) {
-                // Skip update if nothing changed
-                if (state.transmitters == transmitters && state.selectedTransmitterUuid == null && state.selectedFrequency == null) {
-                    return@update state
+            // Derive the frequency to report from the user's current selection (if any)
+            val freq = if (isFreqEnabled && state.selectedTransmitterUuid != null) {
+                val selectedRadio = transmitters.firstOrNull { it.uuid == state.selectedTransmitterUuid }
+                selectedRadio?.let { radio ->
+                    val low = radio.downlinkLow
+                    val high = radio.downlinkHigh
+                    when {
+                        low != null && high != null -> (low + high) / 2
+                        low != null -> low
+                        else -> null
+                    }
                 }
-                return@update state.copy(
-                    transmitters = transmitters,
-                    selectedTransmitterUuid = null,
-                    selectedFrequency = null
-                )
-            }
-            val selectedUuid = state.selectedTransmitterUuid ?: transmitters.firstOrNull()?.uuid
-            val selectedRadio = transmitters.firstOrNull { it.uuid == selectedUuid }
-            val freq = selectedRadio?.let { radio ->
-                val low = radio.downlinkLow
-                val high = radio.downlinkHigh
-                when {
-                    low != null && high != null -> (low + high) / 2
-                    low != null -> low
-                    else -> null
-                }
-            }
-            // Skip update if nothing changed
-            if (state.transmitters == transmitters && state.selectedTransmitterUuid == selectedUuid && state.selectedFrequency == freq) {
+            } else null
+
+            if (state.transmitters == transmitters && state.selectedFrequency == freq) {
                 return@update state
             }
-            state.copy(transmitters = transmitters, selectedTransmitterUuid = selectedUuid, selectedFrequency = freq)
+            state.copy(transmitters = transmitters, selectedFrequency = freq)
         }
     }
 
+    private fun initSstvDecoder() {
+        if (sstvDecoder == null) {
+            val decoder = SstvDecoder(sampleRate = audioCapture.sampleRate)
+            sstvDecoder = decoder
+            _uiState.update { it.copy(sstv = it.sstv.copy(supportedModes = decoder.supportedModes)) }
+            viewModelScope.launch {
+                decoder.frames.collect { frame ->
+                    _uiState.update { it.copy(sstv = it.sstv.copy(currentFrame = frame)) }
+                }
+            }
+        }
+    }
+
+    private fun startSstvRecording() {
+        if (sstvRecordingJob?.isActive == true) return
+        initSstvDecoder()
+        _uiState.update { it.copy(sstv = it.sstv.copy(status = SstvStatus.Recording)) }
+        sstvRecordingJob = viewModelScope.launch {
+            audioCapture.audioFlow().collect { buffer ->
+                sstvDecoder?.feedSamples(buffer)
+            }
+        }
+    }
+
+    private fun stopSstvRecording() {
+        sstvRecordingJob?.cancel()
+        sstvRecordingJob = null
+        _uiState.update { it.copy(sstv = it.sstv.copy(status = SstvStatus.Idle)) }
+    }
+
     companion object {
+
+        val CTCSS_TONES = listOf(
+            67.0, 69.3, 71.9, 74.4, 77.0, 79.7, 82.5, 85.4, 88.5, 91.5,
+            94.8, 97.4, 100.0, 103.5, 107.2, 110.9, 114.8, 118.8, 123.0, 127.3, 131.8, 136.5,
+            141.3, 146.2, 151.4, 156.7, 162.2, 167.9, 173.8, 179.9, 186.2, 192.8, 203.5, 210.7,
+            218.1, 225.7, 233.6, 241.8, 250.3
+        )
+
+        fun formatFrequency(frequencyHz: Long): String {
+            if (frequencyHz <= 0) return "---"
+            val mhz = frequencyHz / 1_000_000
+            val khz = (frequencyHz % 1_000_000) / 1_000
+            val hz = frequencyHz % 1_000
+            return String.format(Locale.ENGLISH, "%d.%03d.%03d", mhz, khz, hz)
+        }
+
         fun factory(container: IMainContainer) = viewModelFactory {
             initializer {
                 RadarViewModel(
@@ -217,7 +378,11 @@ class RadarViewModel(
                     satelliteRepo = container.satelliteRepo,
                     settingsRepo = container.settingsRepo,
                     sensorsRepo = container.provideSensorsRepo(),
-                    addToCalendar = container.provideAddToCalendar()
+                    addToCalendar = container.provideAddToCalendar(),
+                    trackingService = container.radioTrackingService,
+                    audioCapture = container.provideAudioCapture(),
+                    saveImage = container.provideSaveImage(),
+                    showToast = container.provideShowToast()
                 )
             }
         }

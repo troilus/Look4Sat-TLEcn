@@ -15,20 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.rtbishop.look4sat.core.domain.predict
+package com.rtbishop.look4sat.core.domain.usecase
 
-data class OrbitalPass(
-    val aosTime: Long = 0L,
-    val aosAzimuth: Double = 90.0,
-    val losTime: Long = 0L,
-    val losAzimuth: Double = 270.0,
-    val altitude: Int = 1000,
-    val maxElevation: Double = 75.0,
-    val orbitalObject: OrbitalObject,
-    val progress: Float = 0.0f,
-    val hasDecayed: Boolean = false
-) {
-    val catNum: Int = orbitalObject.data.catnum
-    val name: String = if (hasDecayed) "${orbitalObject.data.name} (decayed?)" else orbitalObject.data.name
-    val isDeepSpace: Boolean = orbitalObject.data.isDeepSpace
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Platform abstraction for microphone audio capture.
+ * Produces a flow of mono Float PCM buffers at the configured sample rate.
+ */
+interface IAudioCapture {
+    val sampleRate: Int
+
+    /**
+     * Start capturing audio. Emits FloatArray buffers continuously until the flow is canceled.
+     * Caller is responsible for holding RECORD_AUDIO permission before calling this.
+     */
+    fun audioFlow(): Flow<FloatArray>
 }

@@ -15,20 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.rtbishop.look4sat.core.domain.predict
+package com.rtbishop.look4sat.core.domain.usecase
 
-data class OrbitalPass(
-    val aosTime: Long = 0L,
-    val aosAzimuth: Double = 90.0,
-    val losTime: Long = 0L,
-    val losAzimuth: Double = 270.0,
-    val altitude: Int = 1000,
-    val maxElevation: Double = 75.0,
-    val orbitalObject: OrbitalObject,
-    val progress: Float = 0.0f,
-    val hasDecayed: Boolean = false
-) {
-    val catNum: Int = orbitalObject.data.catnum
-    val name: String = if (hasDecayed) "${orbitalObject.data.name} (decayed?)" else orbitalObject.data.name
-    val isDeepSpace: Boolean = orbitalObject.data.isDeepSpace
+/**
+ * Saves a decoded SSTV image to the device gallery.
+ * @return true if the image was saved successfully
+ */
+interface ISaveImage {
+    suspend operator fun invoke(pixels: IntArray, width: Int, height: Int, modeName: String): Boolean
 }
