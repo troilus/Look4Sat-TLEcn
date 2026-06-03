@@ -1,0 +1,66 @@
+name: Update TLE Data
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: tlecn
+
+      - name: Download satellite data files
+        run: |
+          mkdir -p tledata
+          # Celestrak CSV
+          curl -fsSL -o tledata/all.csv       "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=csv"
+          curl -fsSL -o tledata/amateur.csv   "https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=csv"
+          curl -fsSL -o tledata/brightest.csv "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=csv"
+          curl -fsSL -o tledata/cubesat.csv   "https://celestrak.org/NORAD/elements/gp.php?GROUP=cubesat&FORMAT=csv"
+          curl -fsSL -o tledata/education.csv "https://celestrak.org/NORAD/elements/gp.php?GROUP=education&FORMAT=csv"
+          curl -fsSL -o tledata/engineering.csv "https://celestrak.org/NORAD/elements/gp.php?GROUP=engineering&FORMAT=csv"
+          curl -fsSL -o tledata/geo.csv       "https://celestrak.org/NORAD/elements/gp.php?GROUP=geo&FORMAT=csv"
+          curl -fsSL -o tledata/globalstar.csv "https://celestrak.org/NORAD/elements/gp.php?GROUP=globalstar&FORMAT=csv"
+          curl -fsSL -o tledata/gnss.csv      "https://celestrak.org/NORAD/elements/gp.php?GROUP=gnss&FORMAT=csv"
+          curl -fsSL -o tledata/intelsat.csv  "https://celestrak.org/NORAD/elements/gp.php?GROUP=intelsat&FORMAT=csv"
+          curl -fsSL -o tledata/iridium.csv   "https://celestrak.org/NORAD/elements/gp.php?GROUP=iridium-NEXT&FORMAT=csv"
+          curl -fsSL -o tledata/military.csv  "https://celestrak.org/NORAD/elements/gp.php?GROUP=military&FORMAT=csv"
+          curl -fsSL -o tledata/last-30-days.csv "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=csv"
+          curl -fsSL -o tledata/oneweb.csv    "https://celestrak.org/NORAD/elements/gp.php?GROUP=oneweb&FORMAT=csv"
+          curl -fsSL -o tledata/orbcomm.csv   "https://celestrak.org/NORAD/elements/gp.php?GROUP=orbcomm&FORMAT=csv"
+          curl -fsSL -o tledata/resource.csv  "https://celestrak.org/NORAD/elements/gp.php?GROUP=resource&FORMAT=csv"
+          curl -fsSL -o tledata/satnogs.csv   "https://celestrak.org/NORAD/elements/gp.php?GROUP=satnogs&FORMAT=csv"
+          curl -fsSL -o tledata/science.csv   "https://celestrak.org/NORAD/elements/gp.php?GROUP=science&FORMAT=csv"
+          curl -fsSL -o tledata/spire.csv     "https://celestrak.org/NORAD/elements/gp.php?GROUP=spire&FORMAT=csv"
+          curl -fsSL -o tledata/starlink.csv  "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=csv"
+          curl -fsSL -o tledata/swarm.csv     "https://celestrak.org/NORAD/elements/gp.php?GROUP=swarm&FORMAT=csv"
+          curl -fsSL -o tledata/weather.csv   "https://celestrak.org/NORAD/elements/gp.php?GROUP=weather&FORMAT=csv"
+          curl -fsSL -o tledata/x-comm.csv    "https://celestrak.org/NORAD/elements/gp.php?GROUP=x-comm&FORMAT=csv"
+          # Other sources
+          curl -fsSL -o tledata/amsat.txt     "https://amsat.org/tle/current/nasabare.txt"
+          curl -fsSL -o tledata/classified.zip "https://www.mmccants.org/tles/classfd.zip"
+          curl -fsSL -o tledata/mccants.zip   "https://www.mmccants.org/tles/inttles.zip"
+          curl -fsSL -o tledata/r4uab.txt     "https://r4uab.ru/satonline.txt"
+
+      - name: Download transceivers data
+        run: |
+          curl -fsSL -o tledata/satnogs_transceivers.json "https://db.satnogs.org/api/transmitters/?format=json&status=active"
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add tledata/
+          if ! git diff --staged --quiet; then
+            git commit -m "Update TLE data [skip ci]"
+            git push
+          else
+            echo "No changes to commit"
+          fi
