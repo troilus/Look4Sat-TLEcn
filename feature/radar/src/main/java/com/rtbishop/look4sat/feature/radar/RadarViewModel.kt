@@ -78,7 +78,7 @@ class RadarViewModel(
     private val _uiState = MutableStateFlow(
         RadarState(
             isUtc = settingsRepo.otherSettings.value.stateOfUtc,
-            orientationValues = sensorsRepo.orientation.value,
+            orientationValues = sensorsRepo.sensorData.value,
             shouldShowSweep = settingsRepo.otherSettings.value.stateOfSweep,
             shouldUseCompass = settingsRepo.otherSettings.value.stateOfSensors,
             sstv = SstvSubState(selectedMode = settingsRepo.otherSettings.value.sstvMode)
@@ -97,7 +97,7 @@ class RadarViewModel(
         if (!settingsRepo.otherSettings.value.stateOfSensors) return
         viewModelScope.launch {
             sensorsRepo.enableSensor()
-            sensorsRepo.orientation.collect { data ->
+            sensorsRepo.sensorData.collect { data ->
                 val orientationValues = (data.first + magDeclination) to data.second
                 _uiState.update { it.copy(orientationValues = orientationValues) }
             }
@@ -320,10 +320,8 @@ class RadarViewModel(
 
     private suspend fun processRadios(radios: List<SatRadio>, orbitalObject: OrbitalObject, time: Long) {
         val transmitters = satelliteRepo.getRadios(orbitalObject, stationPos, radios, time)
-        val isFreqEnabled =
-            settingsRepo.rcSettings.value.frequencyState || settingsRepo.rcSettings.value.bluetoothFrequencyState
         _uiState.update { state ->
-            val freq = if (isFreqEnabled && state.transceivers.selectedUuid != null) {
+            val freq = if (state.transceivers.selectedUuid != null) {
                 val selectedRadio = transmitters.firstOrNull { it.uuid == state.transceivers.selectedUuid }
                 selectedRadio?.let { radio ->
                     val low = radio.downlinkLow
