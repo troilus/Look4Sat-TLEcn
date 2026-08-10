@@ -34,6 +34,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -41,6 +44,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.time.Duration.Companion.milliseconds
 
 class PassesViewModel(
     private val satelliteRepo: ISatelliteRepo,
@@ -91,32 +95,37 @@ class PassesViewModel(
                 _uiState.update { it.copy(modes = modes) }
             }
         }
-        // Main tick loop: reacts to new passes, then ticks every second
+        // Tick loop: restarts on passes change, UTC/DeepSpace changes. Grouping/sun-time
+        // computations run once per restart, progress/countdown are calculated every second.
         viewModelScope.launch {
-            satelliteRepo.passes.collectLatest { allPasses ->
-                while (isActive) {
-                    val timeNow = System.currentTimeMillis()
-                    val isUtc = _uiState.value.isUtc
-                    val showDeepSpace = _uiState.value.showDeepSpace
-                    val filtered = allPasses
-                        .let { if (showDeepSpace) it else it.filter { pass -> !pass.isDeepSpace } }
-                    val processed = computePassProgress(filtered, timeNow)
-                    val (nextPass, nextTime, isAos) = resolveNextPass(processed, timeNow)
-                    val sunTimes = computeSunTimes(processed, isUtc)
-                    val grouped = groupPasses(processed, isUtc)
-                    _uiState.update {
-                        it.copy(
-                            itemsList = processed,
-                            groupedPasses = grouped,
-                            sunTimes = sunTimes,
-                            nextPass = nextPass,
-                            nextTime = nextTime,
-                            isNextTimeAos = isAos
-                        )
+            combine(
+                satelliteRepo.passes,
+                settingsRepo.otherSettings.map { it.stateOfUtc }.distinctUntilChanged(),
+                settingsRepo.passesSettings.map { it.showDeepSpace }.distinctUntilChanged()
+            ) { passes, isUtc, showDeepSpace -> Triple(passes, isUtc, showDeepSpace) }
+                .collectLatest { (allPasses, isUtc, showDeepSpace) ->
+                    val filtered = if (showDeepSpace) allPasses
+                    else allPasses.filter { !it.isDeepSpace }
+                    // Expensive: recompute sun times once per items/UTC change, not every second
+                    val sunTimes = computeSunTimes(filtered, isUtc)
+                    _uiState.update { it.copy(sunTimes = sunTimes) }
+                    while (isActive) {
+                        val timeNow = System.currentTimeMillis()
+                        val processed = computePassProgress(filtered, timeNow)
+                        val grouped = groupPasses(processed, isUtc)
+                        val (nextPass, nextTime, isAos) = resolveNextPass(processed, timeNow)
+                        _uiState.update {
+                            it.copy(
+                                itemsList = processed,
+                                groupedPasses = grouped,
+                                nextPass = nextPass,
+                                nextTime = nextTime,
+                                isNextTimeAos = isAos
+                            )
+                        }
+                        delay(1000.milliseconds)
                     }
-                    delay(1000)
                 }
-            }
         }
     }
 
@@ -145,12 +154,28 @@ class PassesViewModel(
         }
     }
 
+    private fun displayLocale(): Locale {
+        val locale = Locale.getDefault()
+        return if (locale.language == Locale.CHINESE.language) locale else Locale.ENGLISH
+    }
+
+    /** Returns the visible pass-date format. Keep non-Chinese locales identical to upstream. */
+    private fun dateFormat(tz: TimeZone): SimpleDateFormat {
+        val locale = displayLocale()
+        val pattern = if (locale.language == Locale.CHINESE.language) {
+            "yyyy'年'M'月'd'日' EEEE"
+        } else {
+            "EEE, dd MMM yyyy"
+        }
+        return SimpleDateFormat(pattern, locale).also { it.timeZone = tz }
+    }
+
     // Computes sunrise/sunset strings for each unique calendar day in the pass list, plus today for DeepSpace
     private fun computeSunTimes(passes: List<OrbitalPass>, isUtc: Boolean): Map<String, Pair<String, String>> {
         val stationPos = settingsRepo.stationPosition.value
         val tz = if (isUtc) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
-        val sdfDate = SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH).also { it.timeZone = tz }
-        val sdfTime = SimpleDateFormat("HH:mm", Locale.ENGLISH).also { it.timeZone = tz }
+        val sdfDate = dateFormat(tz)
+        val sdfTime = SimpleDateFormat("HH:mm", displayLocale()).also { it.timeZone = tz }
         val result = LinkedHashMap<String, Pair<String, String>>()
         // DeepSpace group always shows today's sun times
         if (passes.any { it.isDeepSpace }) {
@@ -173,7 +198,7 @@ class PassesViewModel(
 
     private fun groupPasses(passes: List<OrbitalPass>, isUtc: Boolean): Map<String, List<OrbitalPass>> {
         val tz = if (isUtc) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
-        val sdfDate = SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH).also { it.timeZone = tz }
+        val sdfDate = dateFormat(tz)
         val ordered = LinkedHashMap<String, List<OrbitalPass>>()
         val deepSpace = passes.filter { it.isDeepSpace }
         if (deepSpace.isNotEmpty()) ordered["DeepSpace (period >225min)"] = deepSpace

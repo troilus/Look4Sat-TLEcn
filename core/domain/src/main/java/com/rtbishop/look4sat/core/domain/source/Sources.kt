@@ -19,14 +19,13 @@ package com.rtbishop.look4sat.core.domain.source
 
 object Sources {
     val satelliteDataUrls = mapOf(
-
-        "Amsat" to "https://tledata.xanyi.eu.org/tledata/amsat.txt",
-        "Classified" to "https://tledata.xanyi.eu.org/tledata/classified.zip",
-        "McCants" to "https://tledata.xanyi.eu.org/tledata/mccants.zip",
-        "R4UAB" to "https://tledata.xanyi.eu.org/tledata/r4uab.txt",
-        "SatNOGS" to "https://tledata.xanyi.eu.org/tledata/satnogs.csv",
+        "CelesTrak" to "https://tledata.xanyi.eu.org/tledata/all.csv",
+        "Amsat" to "https://tledata.xanyi.eu.org/tledata/nasabare.txt",
+        "McCants Classified" to "https://tledata.xanyi.eu.org/tledata/classfd.zip",
+        "McCants Integrated" to "https://tledata.xanyi.eu.org/tledata/inttles.zip",
+        "R4UAB" to "https://tledata.xanyi.eu.org/tledata/satonline.txt",
+        "SatNOGS" to "https://tledata.xanyi.eu.org/tledata/satnogs.txt",
         "ARISS" to "https://tledata.xanyi.eu.org/tledata/iss.txt",
-
         "Other" to "" // key for sats filter
     )
     val transceiversDataUrls = mapOf(

@@ -34,9 +34,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.util.TimeZone
+import kotlin.time.Duration.Companion.milliseconds
 
 class SatelliteRepo(
     private val dispatcher: CoroutineDispatcher,
@@ -63,19 +65,23 @@ class SatelliteRepo(
     override suspend fun getRadiosWithId(id: Int) = localStorage.getRadiosWithId(id)
 
     override suspend fun initRepository() = withContext(dispatcher) {
-        settingsRepo.selectedIds.collect { selectedIds ->
-            _satellites.update { localStorage.getEntriesWithIds(selectedIds) }
-            val settings = settingsRepo.passesSettings.value
-            calculatePasses(
-                time = System.currentTimeMillis(),
-                hoursAhead = settings.hoursAhead,
-                minElevation = settings.minElevation,
-                aosStartMinute = settings.aosStartMinute,
-                aosEndMinute = settings.aosEndMinute,
-                invertAosTimeWindow = settings.invertAosTimeWindow,
-                modes = settingsRepo.selectedSatModes.value
-            )
-        }
+        combine(
+            settingsRepo.selectedIds,
+            settingsRepo.stationPosition
+        ) { selectedIds, _ -> selectedIds }
+            .collect { selectedIds ->
+                _satellites.update { localStorage.getEntriesWithIds(selectedIds) }
+                val settings = settingsRepo.passesSettings.value
+                calculatePasses(
+                    time = System.currentTimeMillis(),
+                    hoursAhead = settings.hoursAhead,
+                    minElevation = settings.minElevation,
+                    aosStartMinute = settings.aosStartMinute,
+                    aosEndMinute = settings.aosEndMinute,
+                    invertAosTimeWindow = settings.invertAosTimeWindow,
+                    modes = settingsRepo.selectedSatModes.value
+                )
+            }
     }
 
     override suspend fun getPosition(sat: OrbitalObject, pos: GeoPos, time: Long): OrbitalPos {
@@ -158,7 +164,7 @@ class SatelliteRepo(
                 }
             }
             newPasses.sortBy { it.aosTime }
-            delay(1000) // Simulate loading time for better UX
+            delay(1000.milliseconds) // Simulate loading time for better UX
             _passes.update { newPasses }
         }
         _isCalculating.value = false
@@ -176,7 +182,7 @@ class SatelliteRepo(
         val inRange = if (aosStartMinute <= aosEndMinute) {
             aosMinute in aosStartMinute..aosEndMinute
         } else {
-            aosMinute >= aosStartMinute || aosMinute <= aosEndMinute
+            aosMinute !in (aosEndMinute + 1)..<aosStartMinute
         }
         return if (invertAosTimeWindow) !inRange else inRange
     }

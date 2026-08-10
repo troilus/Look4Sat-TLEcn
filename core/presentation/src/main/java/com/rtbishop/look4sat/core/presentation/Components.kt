@@ -47,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
@@ -144,7 +145,7 @@ fun RowScope.NextPassRow(pass: OrbitalPass, modifier: Modifier = Modifier, isUtc
         if (isUtc) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
     }
     val sdfTime = remember(isUtc) {
-        SimpleDateFormat("HH:mm:ss", Locale.ENGLISH).also { it.timeZone = timeZone }
+        SimpleDateFormat("HH:mm:ss", displayLocale()).also { it.timeZone = timeZone }
     }
     ElevatedCard(
         modifier = modifier
@@ -211,6 +212,11 @@ fun RowScope.NextPassRow(pass: OrbitalPass, modifier: Modifier = Modifier, isUtc
             }
         }
     }
+}
+
+private fun displayLocale(): Locale {
+    val locale = Locale.getDefault()
+    return if (locale.language == Locale.CHINESE.language) locale else Locale.ENGLISH
 }
 
 @Composable
@@ -303,7 +309,8 @@ fun SharedDialog(
     titleTextAlign: TextAlign = if (onCancel != null && onAccept != null) TextAlign.Center else TextAlign.Start,
     content: @Composable (padding: Dp) -> Unit
 ) {
-    DialogShell(onDismissRequest = onDismissRequest) { padding ->
+    val dismissible = onCancel != null
+    DialogShell(onDismissRequest = onDismissRequest, dismissible = dismissible) { padding ->
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -337,10 +344,14 @@ fun SharedDialog(
 @Composable
 private fun DialogShell(
     onDismissRequest: () -> Unit,
+    dismissible: Boolean = true,
     content: @Composable (padding: Dp) -> Unit
 ) {
     val padding = LocalSpacing.current.large
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+        confirmValueChange = { if (dismissible) true else it != SheetValue.Hidden }
+    )
     val stopSheetFling = remember {
         object : NestedScrollConnection {
             override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
@@ -355,7 +366,7 @@ private fun DialogShell(
         }
     }
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = if (dismissible) onDismissRequest else { {} },
         sheetState = sheetState,
         dragHandle = null,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),

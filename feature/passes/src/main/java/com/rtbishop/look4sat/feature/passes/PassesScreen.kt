@@ -156,7 +156,7 @@ private fun PassesScreen(
             TopBar(
                 isVerticalLayout = isVerticalLayout,
                 startAction = {
-                    IconCard(action = { onAction(PassesAction.TogglePassesDialog) }, resId = R.drawable.ic_filter)
+                    IconCard(action = { onAction(PassesAction.ToggleRadiosDialog) }, resId = R.drawable.ic_radios)
                 },
                 topInfo = {
                     TimerRow(timeString = uiState.nextTime, isTimeAos = uiState.isNextTimeAos)
@@ -165,7 +165,7 @@ private fun PassesScreen(
                     NextPassRow(pass = uiState.nextPass, isUtc = uiState.isUtc)
                 },
                 endAction = {
-                    IconCard(action = { onAction(PassesAction.ToggleRadiosDialog) }, resId = R.drawable.ic_radios)
+                    IconCard(action = { onAction(PassesAction.TogglePassesDialog) }, resId = R.drawable.ic_filter)
                 }
             )
         }
@@ -292,6 +292,11 @@ private fun StickyDateHeader(label: String, sunriseTime: String, sunsetTime: Str
     }
 }
 
+private fun displayLocale(): Locale {
+    val locale = Locale.getDefault()
+    return if (locale.language == Locale.CHINESE.language) locale else Locale.ENGLISH
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun DeepSpacePassPreview() {
@@ -324,7 +329,7 @@ private fun PassItem(
         if (isUtc) TimeZone.getTimeZone("UTC") else TimeZone.getDefault()
     }
     val sdfTime = remember(isUtc) {
-        SimpleDateFormat("HH:mm:ss", Locale.ENGLISH).also { it.timeZone = timeZone }
+        SimpleDateFormat("HH:mm:ss", displayLocale()).also { it.timeZone = timeZone }
     }
     val aosTimeStr = remember(pass.aosTime, isUtc) { sdfTime.format(Date(pass.aosTime)) }
     val losTimeStr = remember(pass.losTime, isUtc) { sdfTime.format(Date(pass.losTime)) }
