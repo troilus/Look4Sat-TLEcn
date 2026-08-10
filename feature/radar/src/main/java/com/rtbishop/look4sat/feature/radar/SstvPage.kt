@@ -53,11 +53,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rtbishop.look4sat.core.presentation.IconCard
 import com.rtbishop.look4sat.core.presentation.OutlinedText
 import com.rtbishop.look4sat.core.presentation.R
+import com.rtbishop.look4sat.core.presentation.SharedDialog
 import com.rtbishop.look4sat.core.presentation.infiniteMarquee
+import kotlin.math.roundToInt
 
 @Composable
 internal fun SstvPage(
@@ -94,53 +95,44 @@ internal fun SstvPage(
 
     if (showModeDialog.value) {
         val allModes = remember(sstv.supportedModes) { listOf("Auto") + sstv.supportedModes }
-        Dialog(onDismissRequest = { showModeDialog.value = false }) {
-            ElevatedCard {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(vertical = 16.dp)
-                ) {
-                    Text(
-                        text = "SSTV Mode",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-                    LazyColumn(
+        val dismiss = { showModeDialog.value = false }
+        SharedDialog(
+            title = "SSTV Mode",
+            onDismissRequest = dismiss,
+            onAccept = dismiss
+        ) { _ ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxHeight(0.7f)
+                    .background(MaterialTheme.colorScheme.background),
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                items(allModes) { mode ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .fillMaxHeight(0.5f)
-                            .background(MaterialTheme.colorScheme.background),
-                        verticalArrangement = Arrangement.spacedBy(1.dp)
-                    ) {
-                        items(allModes) { mode ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .clickable {
-                                        onAction(RadarAction.SstvSelectMode(mode))
-                                        showModeDialog.value = false
-                                    }
-                            ) {
-                                Text(
-                                    text = mode,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(start = 16.dp)
-                                )
-                                RadioButton(
-                                    selected = mode == sstv.selectedMode,
-                                    onClick = null,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-                                )
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .clickable {
+                                onAction(RadarAction.SstvSelectMode(mode))
+                                showModeDialog.value = false
                             }
-                        }
+                    ) {
+                        Text(
+                            text = mode,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 16.dp)
+                        )
+                        RadioButton(
+                            selected = mode == sstv.selectedMode,
+                            onClick = null,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                        )
                     }
                 }
             }
@@ -181,6 +173,19 @@ internal fun SstvPage(
                 modifier = Modifier.align(Alignment.Center)
             )
         }
+
+        val qualityText = frame?.let {
+            val syncPct = (it.syncHitRate * 100f).roundToInt()
+            val gainX10 = (it.appliedGain * 10f).roundToInt() / 10f
+            val inputRmsX1000 = (it.inputRms * 1000f).roundToInt() / 1000f
+            val scope = if (it.scopePixels != null) " | Scope ${it.scopeWidth}x${it.scopeHeight}" else ""
+            val complete = if (it.imageComplete) " | Complete" else ""
+            "RMS $inputRmsX1000 | Gain x$gainX10 | Sync $syncPct% | Pred ${it.predictedLineBursts}/${it.maxPredictedStreak} | Err ${it.timingErrorSamples}$scope$complete"
+        } ?: sstv.diagnosticsMetrics?.let {
+            val syncPct = (it.syncHitRate * 100f).roundToInt()
+            "Sync $syncPct% | Pred ${it.predictedLineBursts}/${it.maxPredictedStreak} | Err ${it.timingErrorSamples}"
+        }
+
         // Bottom control bar — dark, blends with the black canvas
         Column(
             modifier = Modifier
@@ -198,6 +203,15 @@ internal fun SstvPage(
                 outlineColor = MaterialTheme.colorScheme.background,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
+            if (qualityText != null) {
+                OutlinedText(
+                    text = qualityText,
+                    fontSize = 12.sp,
+                    fillColor = MaterialTheme.colorScheme.onSurface,
+                    outlineColor = MaterialTheme.colorScheme.background,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

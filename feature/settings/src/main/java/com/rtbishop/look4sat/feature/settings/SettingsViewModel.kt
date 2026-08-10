@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(
+    private val container: IMainContainer,
     private val databaseRepo: IDatabaseRepo,
     private val settingsRepo: ISettingsRepo,
     private val showToast: IShowToast
@@ -47,7 +48,8 @@ class SettingsViewModel(
             otherSettings = settingsRepo.otherSettings.value,
             rcSettings = settingsRepo.rcSettings.value,
             radioControlSettings = settingsRepo.radioControlSettings.value,
-            dataSourcesSettings = settingsRepo.dataSourcesSettings.value
+            dataSourcesSettings = settingsRepo.dataSourcesSettings.value,
+            pairedBluetoothDevices = container.providePairedBluetoothDevices()
         )
     )
 
@@ -65,11 +67,11 @@ class SettingsViewModel(
             settingsRepo.databaseState.collect { state ->
                 _uiState.update {
                     it.copy(
-                        dataSettings = DataSettings(
-                            false,
-                            state.numberOfSatellites,
-                            state.numberOfRadios,
-                            state.updateTimestamp
+                        dataSettings = it.dataSettings.copy(
+                            isUpdating = false,
+                            entriesTotal = state.numberOfSatellites,
+                            radiosTotal = state.numberOfRadios,
+                            timestamp = state.updateTimestamp
                         )
                     )
                 }
@@ -107,11 +109,11 @@ class SettingsViewModel(
             SettingsAction.DismissPosMessages -> dismissPosMessage()
             // Data
             SettingsAction.UpdateFromWeb -> runDataUpdate { databaseRepo.updateFromRemote() }
-            is SettingsAction.UpdateTLEFromFile -> runDataUpdate { databaseRepo.updateTLEFromFile(action.uri) }
-            is SettingsAction.UpdateTransceiversFromFile -> runDataUpdate {
-                databaseRepo.updateTransceiversFromFile(
-                    action.uri
-                )
+            is SettingsAction.UpdateTLEFromFile -> runManualImport(action.invalidFileMessage) {
+                databaseRepo.updateTLEFromFile(action.uri)
+            }
+            is SettingsAction.UpdateTransceiversFromFile -> runManualImport(action.invalidFileMessage) {
+                databaseRepo.updateTransceiversFromFile(action.uri)
             }
             SettingsAction.ClearAllData -> viewModelScope.launch { databaseRepo.clearAllData() }
             // Toggles
@@ -184,12 +186,27 @@ class SettingsViewModel(
         }
     }
 
+    private fun runManualImport(importErrorMessage: String, block: suspend () -> Int) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(dataSettings = it.dataSettings.copy(isUpdating = true)) }
+                if (block() == 0) showToast(importErrorMessage)
+            } catch (exception: Exception) {
+                _uiState.update { it.copy(dataSettings = it.dataSettings.copy(isUpdating = false)) }
+                println(exception)
+            }
+        }
+    }
+
+
     // endregion
 
     companion object {
+
         fun factory(container: IMainContainer) = viewModelFactory {
             initializer {
                 SettingsViewModel(
+                    container = container,
                     databaseRepo = container.databaseRepo,
                     settingsRepo = container.settingsRepo,
                     showToast = container.provideShowToast()

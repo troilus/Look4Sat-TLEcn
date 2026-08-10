@@ -19,36 +19,26 @@ package com.rtbishop.look4sat.core.domain.source
 
 object Sources {
     val satelliteDataUrls = mapOf(
-        "All" to "https://tledata.xanyi.eu.org/tledata/all.csv",
-        "Amateur" to "https://tledata.xanyi.eu.org/tledata/amateur.csv",
-        "Brightest" to "https://tledata.xanyi.eu.org/tledata/brightest.csv",
-        "Cubesat" to "https://tledata.xanyi.eu.org/tledata/cubesat.csv",
-        "Education" to "https://tledata.xanyi.eu.org/tledata/education.csv",
-        "Engineer" to "https://tledata.xanyi.eu.org/tledata/engineering.csv",
-        "Geostationary" to "https://tledata.xanyi.eu.org/tledata/geo.csv",
-        "Globalstar" to "https://tledata.xanyi.eu.org/tledata/globalstar.csv",
-        "GNSS" to "https://tledata.xanyi.eu.org/tledata/gnss.csv",
-        "Intelsat" to "https://tledata.xanyi.eu.org/tledata/intelsat.csv",
-        "Iridium" to "https://tledata.xanyi.eu.org/tledata/iridium.csv",
-        "Military" to "https://tledata.xanyi.eu.org/tledata/military.csv",
-        "New" to "https://tledata.xanyi.eu.org/tledata/last-30-days.csv",
-        "OneWeb" to "https://tledata.xanyi.eu.org/tledata/oneweb.csv",
-        "Orbcomm" to "https://tledata.xanyi.eu.org/tledata/orbcomm.csv",
-        "Resource" to "https://tledata.xanyi.eu.org/tledata/resource.csv",
-        "SatNOGS" to "https://tledata.xanyi.eu.org/tledata/satnogs.csv",
-        "Science" to "https://tledata.xanyi.eu.org/tledata/science.csv",
-        "Spire" to "https://tledata.xanyi.eu.org/tledata/spire.csv",
-        "Starlink" to "https://tledata.xanyi.eu.org/tledata/starlink.csv",
-        "Swarm" to "https://tledata.xanyi.eu.org/tledata/swarm.csv",
-        "Weather" to "https://tledata.xanyi.eu.org/tledata/weather.csv",
-        "X-Comm" to "https://tledata.xanyi.eu.org/tledata/x-comm.csv",
-        "Amsat" to "https://tledata.xanyi.eu.org/tledata/amsat.txt",
-        "Classified" to "https://tledata.xanyi.eu.org/tledata/classified.zip",
-        "McCants" to "https://tledata.xanyi.eu.org/tledata/mccants.zip",
-        "R4UAB" to "https://tledata.xanyi.eu.org/tledata/r4uab.txt",
+
+        "Amsat" to "https://amsat.org/tle/current/nasabare.txt",
+        "Classified" to "https://www.mmccants.org/tles/classfd.zip",
+        "McCants" to "https://www.mmccants.org/tles/inttles.zip",
+        "R4UAB" to "https://r4uab.ru/satonline.txt",
+        "SatNOGS" to "https://db.satnogs.org/api/tle/?format=3le",
+        "ARISS" to "https://live.ariss.org/iss.txt",
+
         "Other" to "" // key for sats filter
     )
     val transceiversDataUrls = mapOf(
         "SatNOGS" to "https://tledata.xanyi.eu.org/tledata/satnogs_transceivers.json"
+    )
+    val satelliteModes = listOf(
+        "4FSK", "64-QAM", "AFSK", "AFSK TUBiX10", "AHRPT", "AM", "APT", "ASK", "BPSK",
+        "BPSK PMT-A3", "CERTO", "CW", "DATV", "DBPSK", "DOKA", "DPSK", "DQPSK", "DSB", "DSTAR",
+        "DUV", "DVB-S2", "FFSK", "FM", "FMN", "FSK", "FSK AX.100 Mode 5", "FSK AX.100 Mode 6",
+        "FSK AX.25 G3RUH", "FT8", "GENESIS FSK", "GFSK", "GFSK Pkst", "GFSK Rktr", "GFSK/BPSK",
+        "GMSK", "GMSK USP", "HRPT", "LoRa", "LRPT", "LSB", "MFSK", "MSK", "MSK AX.100 Mode 5",
+        "MSK AX.100 Mode 6", "OFDM", "OQPSK", "PPM", "PSK", "PSK31", "PSK63", "QPSK", "QPSK31",
+        "QPSK63", "SIDLOC", "SQPSK", "SSDV", "SSTV", "UNKNOWN", "USB", "WSJT"
     )
 }

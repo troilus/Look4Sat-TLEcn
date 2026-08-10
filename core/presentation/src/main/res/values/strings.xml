@@ -14,27 +14,33 @@
     <string name="nav_prefs">Settings</string>
 
     <!-- Satellites screen -->
-    <string name="sat_type_hint">Type: %s</string>
-    <string name="sat_type_title">Select satellite type</string>
+    <string name="sat_type_hint">Modes: %s</string>
+    <string name="sat_type_title">Select modes</string>
     <string name="sat_search_hint">Id - Name</string>
     <string name="sat_search_clear">Clear</string>
     <string name="sat_clear_all">Clear all</string>
     <string name="sat_select_all">Select all</string>
+    <string name="sat_group_selected">Selected</string>
+    <string name="sat_group_available">Available</string>
+    <string name="sat_group_selected_count">Selected (%1$d)</string>
+    <string name="sat_group_available_count">Available (%1$d)</string>
     <string name="sat_empty_list_message">"Make sure your search query is correct and the DB is updated"</string>
     <string name="sat_warning_title">Warning\!</string>
     <string name="sat_warning_message">
         There are over 9000 satellites listed in this app.
         It makes no sense to track them all at the same time.
         \n\nAlways try to narrow down the list to only the ones
-        you\'re interested in via search and types selector.</string>
+        you\'re interested in via search and the modes selector.</string>
 
     <!-- Passes screen -->
     <string name="pass_filter_title">Filter passes</string>
     <string name="pass_filter_elev">Minimal elevation</string>
-    <string name="pass_filter_hours">Hours ahead</string>
+    <string name="pass_filter_hours">Time ahead</string>
+    <string name="pass_filter_aos_time">AOS window</string>
+    <string name="pass_filter_invert_time">Invert AOS window</string>
     <string name="pass_filter_deep_space">DeepSpace (period >225min)</string>
     <string name="pass_time_placeholder" translatable="false"> -- : -- : -- </string>
-    <string name="pass_modes_title">Select modulation type</string>
+    <string name="pass_modes_title">Select modes</string>
     <string name="pass_satId" translatable="false">%05d</string>
     <string name="pass_elevation">Elevation: %.1f°</string>
     <string name="pass_deep_space" translatable="false">DeepSpace</string>
@@ -49,9 +55,8 @@
         \n\nPlease update the database at least weekly to get accurate predictions.</string>
     <string name="pass_whatsnew_title" translatable="false">What\'s new in Look4Sat</string>
     <string name="pass_whatsnew_message" translatable="false">
-        * Fixed transceivers retention on a failed fetch from server
-        \n\n* Fixed SSTV frequency display, no transceiver selected hint
-        \n\n* Fixed All satellite category retention on Satellites screen
+        * Added required tweaks to support Android 17 (API 37)
+        \n\n* Added ACCESS_LOCAL_NETWORK permission check to support network data output
     </string>
 
     <!-- Radar screen -->
@@ -123,11 +128,11 @@
     <string name="prefs_loc_qth_title">QTH</string>
     <string name="prefs_loc_qth_error">Invalid QTH locator</string>
     <string name="prefs_loc_success">Position updated successfully</string>
-    <string name="prefs_station_title">Station position settings</string>
-    <string name="prefs_station_lat_text">Set your ground station\'s latitude</string>
-    <string name="prefs_station_lon_text">Set your ground station\'s longitude</string>
-    <string name="prefs_locator_title">QTH locator settings</string>
-    <string name="prefs_locator_text">Set station\'s position using locator</string>
+    <string name="prefs_station_title">Station position</string>
+    <string name="prefs_station_lat_text">Station latitude</string>
+    <string name="prefs_station_lon_text">Station longitude</string>
+    <string name="prefs_locator_title">QTH locator</string>
+    <string name="prefs_locator_text">Set position via locator</string>
 
     <string name="prefs_data_title">Satellite data</string>
     <string name="prefs_data_entries">Satellites: %s</string>
@@ -137,10 +142,12 @@
     <string name="prefs_data_clear">Clear</string>
     <string name="prefs_data_clear_success">Data was cleared successfully</string>
     <string name="prefs_data_update_success">Update completed successfully</string>
+    <string name="prefs_data_import_satellites_error">No satellites imported. Select a valid TLE/3LE (.txt) or OMM (.csv) file.</string>
+    <string name="prefs_data_import_transceivers_error">No transceivers imported. Select a valid SatNOGS (.json) file.</string>
 
-    <string name="prefs_data_sources_title">Custom data sources</string>
-    <string name="prefs_data_sources_tle_switch">Custom TLE URL</string>
-    <string name="prefs_data_sources_transceivers_switch">Custom transceivers URL</string>
+    <string name="prefs_data_sources_title">Custom sources</string>
+    <string name="prefs_data_sources_tle_switch">TLE URL</string>
+    <string name="prefs_data_sources_transceivers_switch">Transceivers URL</string>
     <string name="prefs_data_sources_url_title" translatable="false">URL (HTTPS)</string>
 
     <string name="prefs_data_output_title">Data output</string>
@@ -150,15 +157,15 @@
 
     <!-- Radio Control -->
     <string name="nav_radiocontrol">Radio Control</string>
-    <string name="rc_settings_title">CAT Radio Control</string>
+    <string name="rc_settings_title">CAT control</string>
     <string name="rc_radio_model">Radio Model</string>
-    <string name="rc_tx_device_hint">TX Radio BT Address</string>
-    <string name="rc_rx_device_hint">RX Radio BT Address</string>
+    <string name="rc_tx_device_hint">TX BT address</string>
+    <string name="rc_rx_device_hint">RX BT address</string>
     <string name="rc_tx_name_hint">TX Radio Name</string>
     <string name="rc_rx_name_hint">RX Radio Name</string>
-    <string name="rc_enable_switch">Enable CAT Control</string>
+    <string name="rc_enable_switch">Enable CAT</string>
 
-    <string name="prefs_net_title">Network data output</string>
+    <string name="prefs_net_title">Network output</string>
     <string name="prefs_net_rotator_switch">Enable rotation output</string>
     <string name="prefs_net_rotator_address_hint">IP:Port</string>
     <string name="prefs_net_rotator_format_hint">Format</string>
@@ -166,21 +173,27 @@
     <string name="prefs_net_frequency_address_hint">IP:Port</string>
     <string name="prefs_net_frequency_format_hint">Format</string>
 
-    <string name="prefs_bt_title">Bluetooth data output</string>
+    <string name="prefs_bt_title">Bluetooth output</string>
     <string name="prefs_bt_rotator_switch">Enable rotation output</string>
-    <string name="prefs_bt_rotator_device_hint">Device id</string>
-    <string name="prefs_bt_rotator_output_hint">Data format</string>
+    <string name="prefs_bt_rotator_device_hint">Device ID</string>
+    <string name="prefs_bt_rotator_output_hint">Format</string>
     <string name="prefs_bt_frequency_switch">Enable frequency output</string>
-    <string name="prefs_bt_frequency_device_hint">Device id</string>
-    <string name="prefs_bt_frequency_output_hint">Data format</string>
+    <string name="prefs_bt_frequency_device_hint">Device ID</string>
+    <string name="prefs_bt_frequency_output_hint">Format</string>
     <string name="prefs_bt_perm_error">Check your bluetooth permission</string>
+    <string name="prefs_net_perm_error">Check your network permission</string>
 
-    <string name="prefs_other_title">Other settings</string>
-    <string name="prefs_other_switch_utc">Show pass time in UTC</string>
-    <string name="prefs_other_switch_update">Enable automatic data update</string>
-    <string name="prefs_other_switch_sweep">Enable radar sweep animation</string>
-    <string name="prefs_other_switch_sensors">Use sensors to rotate radar view</string>
-    <string name="prefs_other_switch_night_mode">Enable red night mode filter</string>
+    <string name="prefs_other_title">Other</string>
+    <string name="prefs_other_switch_utc">Show UTC time</string>
+    <string name="prefs_other_switch_update">Auto-update data</string>
+    <string name="prefs_other_switch_sweep">Radar sweep animation</string>
+    <string name="prefs_other_switch_sensors">Use sensors for radar</string>
+    <string name="prefs_other_switch_night_mode">Red night filter</string>
+
+    <string name="prefs_highlight_title">Elevation highlight</string>
+    <string name="prefs_highlight_low">Low &lt; %1$d°</string>
+    <string name="prefs_highlight_mid">Mid %1$d–%2$d°</string>
+    <string name="prefs_highlight_high">High &gt; %1$d°</string>
 
     <string name="prefs_outro_title">I would like to say thanks to</string>
     <string name="prefs_outro_thanks" translatable="false">
