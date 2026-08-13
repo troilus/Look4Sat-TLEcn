@@ -27,11 +27,13 @@ jobs:
           curl -fsSL --max-time 120 -o tledata/satonline.txt     "https://r4uab.ru/satonline.txt" || echo "⚠ Failed: r4uab"
           curl -fsSL --max-time 120 -o tledata/satnogs.txt     "https://db.satnogs.org/api/tle/?format=3le" || echo "⚠ Failed: r4uab"
           curl -fsSL --max-time 120 -o tledata/iss.txt     "https://live.ariss.org/iss.txt" || echo "⚠ Failed: ariss"
+          
+          
 
       - name: Download transceivers data
         run: |
           curl -fsSL --max-time 120 -o tledata/satnogs_transceivers.json "https://db.satnogs.org/api/transmitters/?format=json&status=active" || echo "⚠ Failed: transceivers"
-
+          curl -fsSL --max-time 120 -o tledata/transmitters.json "https://r4uab.ru/transmitters.json" || echo "⚠ Failed: ariss"
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
