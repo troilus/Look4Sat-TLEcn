@@ -18,18 +18,17 @@
 package com.rtbishop.look4sat.core.domain.source
 
 object Sources {
-    val satelliteDataUrls = mapOf(
-        "CelesTrak" to "https://tledata.xanyi.eu.org/tledata/all.csv",
-        "Amsat" to "https://tledata.xanyi.eu.org/tledata/nasabare.txt",
-        "McCants Classified" to "https://tledata.xanyi.eu.org/tledata/classfd.zip",
-        "McCants Integrated" to "https://tledata.xanyi.eu.org/tledata/inttles.zip",
-        "R4UAB" to "https://tledata.xanyi.eu.org/tledata/satonline.txt",
-        "SatNOGS" to "https://tledata.xanyi.eu.org/tledata/satnogs.txt",
-        "ARISS" to "https://tledata.xanyi.eu.org/tledata/iss.txt",
-        "Other" to "" // key for sats filter
+    val satelliteDataUrls = listOf(
+        "tledata.xanyi.eu.org/tledata/all.csv",
+        "tledata.xanyi.eu.org/tledata/satnogs.txt",
+        "tledata.xanyi.eu.org/tledata/nasabare.txt",
+        "tledata.xanyi.eu.org/tledata/classfd.zip",
+        "tledata.xanyi.eu.org/tledata/satonline.txt",
+        "tledata.xanyi.eu.org/tledata/iss.txt"
     )
-    val transceiversDataUrls = mapOf(
-        "SatNOGS" to "https://tledata.xanyi.eu.org/tledata/satnogs_transceivers.json"
+    val transceiversDataUrls = listOf(
+        "tledata.xanyi.eu.org/tledata/satnogs_transceivers.json",
+        "tledata.xanyi.eu.org/tledata/transmitters.json"
     )
     val satelliteModes = listOf(
         "4FSK", "64-QAM", "AFSK", "AFSK TUBiX10", "AHRPT", "AM", "APT", "ASK", "BPSK",

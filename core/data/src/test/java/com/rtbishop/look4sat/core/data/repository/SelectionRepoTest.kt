@@ -127,7 +127,7 @@ class SelectionRepoTest {
         override val databaseState: MutableStateFlow<DatabaseState> = MutableStateFlow(DatabaseState(0, 0, 0L))
 
         override val rcSettings: StateFlow<RCSettings> = MutableStateFlow(
-            RCSettings(false, "", "", "", false, "", "", "", false, "", "", "", false, "", "")
+            RCSettings(false, "", "", "", false, "", "", "", 0L, false, "", "", "", false, "", "")
         )
 
         override val otherSettings: StateFlow<OtherSettings> = MutableStateFlow(
@@ -135,7 +135,7 @@ class SelectionRepoTest {
         )
 
         override val dataSourcesSettings: StateFlow<DataSourcesSettings> = MutableStateFlow(
-            DataSourcesSettings(false, false, "", "")
+            DataSourcesSettings(emptyList(), emptyList())
         )
 
         override val radioControlSettings: StateFlow<RadioControlSettings> = MutableStateFlow(
@@ -167,6 +167,10 @@ class SelectionRepoTest {
         override fun updateDataSourcesSettings(settings: DataSourcesSettings) = Unit
 
         override fun updateRadioControlSettings(settings: RadioControlSettings) = Unit
+
+        override fun getSatelliteOffset(catnum: Int): String = ""
+
+        override fun setSatelliteOffset(catnum: Int, offset: String) = Unit
     }
 }
 

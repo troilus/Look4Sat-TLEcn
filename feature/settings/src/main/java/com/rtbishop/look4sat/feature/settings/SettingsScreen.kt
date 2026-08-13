@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rtbishop.look4sat.core.domain.model.DataSourcesSettings
 import com.rtbishop.look4sat.core.domain.model.OtherSettings
 import com.rtbishop.look4sat.core.domain.predict.GeoPos
 import com.rtbishop.look4sat.core.domain.repository.IContainerProvider
@@ -74,6 +75,7 @@ import com.rtbishop.look4sat.core.presentation.PrimaryIconCard
 import com.rtbishop.look4sat.core.presentation.R
 import com.rtbishop.look4sat.core.presentation.ScreenColumn
 import com.rtbishop.look4sat.core.presentation.TopBar
+import com.rtbishop.look4sat.core.presentation.WhatsNewDialog
 import com.rtbishop.look4sat.core.presentation.infiniteMarquee
 import com.rtbishop.look4sat.core.presentation.isVerticalLayout
 import java.text.SimpleDateFormat
@@ -92,22 +94,10 @@ fun SettingsDestination() {
 @Composable
 private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) -> Unit) {
     val dialogs = rememberDialogVisibility()
-    val pendingCustomSourcesGrant = remember { mutableStateOf<(() -> Unit)?>(null) }
-    val pendingCustomSourcesDeny = remember { mutableStateOf<(() -> Unit)?>(null) }
     val permissions = rememberSettingsPermissions(
         sendAction = onAction,
         onBluetoothGranted = { dialogs.bluetooth = true },
-        onNetworkGranted = { dialogs.network = true },
-        onCustomSourcesPermissionGranted = {
-            pendingCustomSourcesGrant.value?.invoke()
-            pendingCustomSourcesGrant.value = null
-            pendingCustomSourcesDeny.value = null
-        },
-        onCustomSourcesPermissionDenied = {
-            pendingCustomSourcesDeny.value?.invoke()
-            pendingCustomSourcesGrant.value = null
-            pendingCustomSourcesDeny.value = null
-        }
+        onNetworkGranted = { dialogs.network = true }
     )
 
     // Dialogs
@@ -128,30 +118,15 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
     }
     if (dialogs.dataSources) {
         DataSourcesDialog(
-            useCustomTle = uiState.dataSourcesSettings.useCustomTLE,
-            useCustomTransceivers = uiState.dataSourcesSettings.useCustomTransceivers,
-            tleUrl = uiState.dataSourcesSettings.tleUrl,
-            transceiversUrl = uiState.dataSourcesSettings.transceiversUrl,
-            requestCustomSourcesPermission = { onGranted, onDenied ->
-                pendingCustomSourcesGrant.value = onGranted
-                pendingCustomSourcesDeny.value = onDenied
-                permissions.launchCustomSourcesPermission()
-            },
+            satelliteUrls = uiState.dataSourcesSettings.satelliteUrls,
+            transceiversUrls = uiState.dataSourcesSettings.transceiversUrls,
             onImportTle = { permissions.launchTleImport(); dialogs.dataSources = false },
             onImportTransceivers = { permissions.launchTransceiverImport(); dialogs.dataSources = false },
             onDismiss = { dialogs.dataSources = false },
-            onSave = { useCustomTle, useCustomTransceivers, tleUrl, transceiversUrl ->
-                val current = uiState.dataSourcesSettings
-                val newSettings = current.copy(
-                    useCustomTLE = if (!useCustomTle || tleUrl.isNotBlank()) useCustomTle else current.useCustomTLE,
-                    tleUrl = if (!useCustomTle || tleUrl.isNotBlank()) tleUrl else current.tleUrl,
-                    useCustomTransceivers = if (!useCustomTransceivers || transceiversUrl.isNotBlank()) useCustomTransceivers else current.useCustomTransceivers,
-                    transceiversUrl = if (!useCustomTransceivers || transceiversUrl.isNotBlank()) transceiversUrl else current.transceiversUrl
-                )
-                if (newSettings != current) onAction(SettingsAction.UpdateDataSources(newSettings))
-                if (newSettings.useCustomTLE || newSettings.useCustomTransceivers) {
-                    onAction(SettingsAction.UpdateFromWeb)
-                }
+            onSave = { satUrls, txUrls ->
+                val newSettings = DataSourcesSettings(satelliteUrls = satUrls, transceiversUrls = txUrls)
+                if (newSettings != uiState.dataSourcesSettings) onAction(SettingsAction.UpdateDataSources(newSettings))
+                onAction(SettingsAction.UpdateFromWeb)
             }
         )
     }
@@ -159,14 +134,15 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
         NetworkOutputDialog(
             initialSettings = uiState.rcSettings,
             onDismiss = { dialogs.network = false },
-            onSave = { rotState, rotAddr, rotPort, rotFmt, freqState, freqAddr, freqPort, freqFmt ->
+            onSave = { rotState, rotAddr, rotPort, rotFmt, freqState, freqAddr, freqPort, freqFmt, freqOffsetHz ->
                 onAction(
                     SettingsAction.UpdateRC(
                         uiState.rcSettings.copy(
                             rotatorState = rotState, rotatorAddress = rotAddr,
                             rotatorPort = rotPort, rotatorFormat = rotFmt,
                             frequencyState = freqState, frequencyAddress = freqAddr,
-                            frequencyPort = freqPort, frequencyFormat = freqFmt
+                            frequencyPort = freqPort, frequencyFormat = freqFmt,
+                            frequencyOffsetHz = freqOffsetHz
                         )
                     )
                 )
@@ -198,6 +174,9 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
             onSave = { onAction(SettingsAction.UpdateRadioControl(it)) }
         )
     }
+    if (dialogs.whatsNew) {
+        WhatsNewDialog(onDismiss = { dialogs.whatsNew = false })
+    }
 
     // URLs for top bar
     val uriHandler = LocalUriHandler.current
@@ -218,7 +197,7 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
             if (isVerticalLayout) {
                 TopBar {
                     TopCard(
-                        onClick = { safeOpenUri(appUrl) },
+                        onClick = { dialogs.whatsNew = true },
                         version = uiState.appVersionName,
                         modifier = Modifier.weight(1f)
                     )
@@ -246,7 +225,7 @@ private fun SettingsScreen(uiState: SettingsState, onAction: (SettingsAction) ->
                 TopBar {
                     PrimaryIconCard(onClick = { safeOpenUri(donateUrl) }, resId = R.drawable.ic_like)
                     TopCard(
-                        onClick = { safeOpenUri(appUrl) },
+                        onClick = { dialogs.whatsNew = true },
                         version = uiState.appVersionName,
                         modifier = Modifier.weight(1f)
                     )
@@ -667,7 +646,7 @@ private fun TopCard(onClick: () -> Unit, modifier: Modifier = Modifier, version:
                 .clickable { onClick() }) {
             Spacer(Modifier)
             Icon(
-                painter = painterResource(id = R.drawable.ic_satellites),
+                painter = painterResource(id = R.drawable.ic_sputnik),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary
             )
@@ -718,6 +697,7 @@ private class DialogVisibility {
     var network by mutableStateOf(false)
     var bluetooth by mutableStateOf(false)
     var radioControl by mutableStateOf(false)
+    var whatsNew by mutableStateOf(false)
 }
 
 @Composable
@@ -725,12 +705,12 @@ private fun rememberDialogVisibility(): DialogVisibility {
     return rememberSaveable(saver = run {
         androidx.compose.runtime.saveable.Saver(
             save = {
-                listOf(it.position, it.locator, it.dataSources, it.network, it.bluetooth, it.radioControl)
+                listOf(it.position, it.locator, it.dataSources, it.network, it.bluetooth, it.radioControl, it.whatsNew)
             },
             restore = {
                 DialogVisibility().apply {
                     position = it[0]; locator = it[1]; dataSources = it[2]
-                    network = it[3]; bluetooth = it[4]; radioControl = it[5]
+                    network = it[3]; bluetooth = it[4]; radioControl = it[5]; whatsNew = it[6]
                 }
             }
         )
@@ -747,17 +727,14 @@ private class SettingsPermissions(
     val launchTleImport: () -> Unit,
     val launchTransceiverImport: () -> Unit,
     val launchBluetooth: () -> Unit,
-    val launchNetwork: () -> Unit,
-    val launchCustomSourcesPermission: () -> Unit
+    val launchNetwork: () -> Unit
 )
 
 @Composable
 private fun rememberSettingsPermissions(
     sendAction: (SettingsAction) -> Unit,
     onBluetoothGranted: () -> Unit,
-    onNetworkGranted: () -> Unit,
-    onCustomSourcesPermissionGranted: () -> Unit,
-    onCustomSourcesPermissionDenied: () -> Unit
+    onNetworkGranted: () -> Unit
 ): SettingsPermissions {
     val locationError = stringResource(R.string.prefs_loc_gps_error)
     val locationRequest = rememberLauncherForActivityResult(
@@ -794,15 +771,6 @@ private fun rememberSettingsPermissions(
         else sendAction(SettingsAction.ShowToast(networkError))
     }
 
-    val customSourcesRequest = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) {
-            onCustomSourcesPermissionGranted()
-        } else {
-            onCustomSourcesPermissionDenied()
-            sendAction(SettingsAction.ShowToast(networkError))
-        }
-    }
-
     return remember {
         SettingsPermissions(
             launchLocation = {
@@ -818,13 +786,6 @@ private fun rememberSettingsPermissions(
                     networkRequest.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
                 } else {
                     onNetworkGranted()
-                }
-            },
-            launchCustomSourcesPermission = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN) {
-                    customSourcesRequest.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
-                } else {
-                    onCustomSourcesPermissionGranted()
                 }
             }
         )

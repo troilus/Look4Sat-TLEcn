@@ -17,26 +17,40 @@
  */
 package com.rtbishop.look4sat.feature.settings
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,11 +59,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rtbishop.look4sat.core.domain.model.RCSettings
 import com.rtbishop.look4sat.core.domain.model.RadioControlSettings
+import com.rtbishop.look4sat.core.domain.model.Constants
 import com.rtbishop.look4sat.core.presentation.CardButton
+import com.rtbishop.look4sat.core.presentation.IconCard
 import com.rtbishop.look4sat.core.presentation.LocalSpacing
 import com.rtbishop.look4sat.core.presentation.MainTheme
 import com.rtbishop.look4sat.core.presentation.R
-import com.rtbishop.look4sat.core.presentation.SharedDialog
+import com.rtbishop.look4sat.core.presentation.ConfirmDialog
 
 @Preview(showBackground = true)
 @Composable
@@ -63,7 +79,7 @@ fun PositionDialog(lat: Double, lon: Double, dismiss: () -> Unit, save: (Double,
     val lonValue = rememberSaveable { mutableStateOf(lon.toString()) }
     val titleText = stringResource(id = R.string.prefs_station_title)
     val onAccept = { saveValues(latValue.value, lonValue.value, save).also { dismiss() } }
-    SharedDialog(title = titleText, onCancel = dismiss, onAccept = onAccept) {
+    ConfirmDialog(title = titleText, onCancel = dismiss, onAccept = onAccept) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
@@ -107,7 +123,7 @@ private fun LocatorDialogPreview() {
 fun LocatorDialog(qthLocator: String, dismiss: () -> Unit, save: (String) -> Unit) {
     val locator = rememberSaveable { mutableStateOf(qthLocator) }
     val onAccept = { save(locator.value).also { dismiss() } }
-    SharedDialog(
+    ConfirmDialog(
         title = stringResource(R.string.prefs_locator_title),
         onCancel = dismiss,
         onAccept = onAccept
@@ -129,130 +145,141 @@ fun LocatorDialog(qthLocator: String, dismiss: () -> Unit, save: (String) -> Uni
 private fun TransceiversDialogPreview() {
     MainTheme {
         DataSourcesDialog(
-            useCustomTle = true,
-            useCustomTransceivers = true,
-            tleUrl = "https://example.com/tle.txt",
-            transceiversUrl = "https://example.com/tx.json",
-            requestCustomSourcesPermission = { onGranted, _ -> onGranted() },
+            satelliteUrls = listOf(
+                "celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=csv",
+                "amsat.org/tle/current/nasabare.txt"
+            ),
+            transceiversUrls = listOf(
+                "db.satnogs.org/api/transmitters/?format=json&status=active"
+            ),
             onImportTle = {},
             onImportTransceivers = {},
             onDismiss = {},
-            onSave = { _, _, _, _ -> }
+            onSave = { _, _ -> }
         )
     }
 }
 
 @Composable
 fun DataSourcesDialog(
-    useCustomTle: Boolean,
-    useCustomTransceivers: Boolean,
-    tleUrl: String,
-    transceiversUrl: String,
-    requestCustomSourcesPermission: (onGranted: () -> Unit, onDenied: () -> Unit) -> Unit,
+    satelliteUrls: List<String>,
+    transceiversUrls: List<String>,
     onImportTle: () -> Unit,
     onImportTransceivers: () -> Unit,
     onDismiss: () -> Unit,
-    onSave: (Boolean, Boolean, String, String) -> Unit
+    onSave: (List<String>, List<String>) -> Unit
 ) {
     val padding = LocalSpacing.current.large
-    val isEnabledCustomTle = rememberSaveable { mutableStateOf(useCustomTle) }
-    val isEnabledCustomTransceivers = rememberSaveable { mutableStateOf(useCustomTransceivers) }
-    val urlTle = rememberSaveable { mutableStateOf(tleUrl) }
-    val urlTransceivers = rememberSaveable { mutableStateOf(transceiversUrl) }
-    val onAccept = {
-        onSave(
-            isEnabledCustomTle.value,
-            isEnabledCustomTransceivers.value,
-            urlTle.value,
-            urlTransceivers.value
-        )
-        onDismiss()
+    // Use stable Long IDs to avoid key collisions (e.g. multiple empty "" entries).
+    val nextId = remember { mutableLongStateOf((satelliteUrls.size + transceiversUrls.size).toLong()) }
+    val satUrls = remember {
+        satelliteUrls.mapIndexed { i, url -> i.toLong() to url }.toMutableStateList()
     }
-    val onCancel = { onDismiss() }
-    SharedDialog(
+    val txUrls = remember {
+        transceiversUrls.mapIndexed { i, url -> (satelliteUrls.size + i).toLong() to url }.toMutableStateList()
+    }
+    val onAccept = { onSave(satUrls.map { it.second }, txUrls.map { it.second }); onDismiss() }
+    ConfirmDialog(
         title = stringResource(id = R.string.prefs_data_sources_title),
-        onCancel = onCancel,
+        onCancel = onDismiss,
         onAccept = onAccept,
     ) {
-        Column(modifier = Modifier.padding(horizontal = padding)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                CardButton(
-                    onClick = {
-                        onImportTle()
-                        onDismiss()
-                    },
-                    text = "TLE/3LE (.txt)\nOMM (.csv)",
-                    modifier = Modifier.weight(1f)
-                )
-                CardButton(
-                    onClick = {
-                        onImportTransceivers()
-                        onDismiss()
-                    },
-                    text = "Transceivers\nSatNOGS (.json)",
-                    modifier = Modifier.weight(1f)
-                )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxHeight(0.84f)
+                .padding(horizontal = padding),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(vertical = 6.dp)
+        ) {
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    CardButton(
+                        onClick = { onImportTle(); onDismiss() },
+                        text = "TLE/3LE (.txt)\nOMM (.csv)",
+                        modifier = Modifier.weight(1f)
+                    )
+                    CardButton(
+                        onClick = { onImportTransceivers(); onDismiss() },
+                        text = "Transceivers\nSatNOGS (.json)",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = stringResource(id = R.string.prefs_data_sources_tle_switch))
-                Switch(
-                    checked = isEnabledCustomTle.value,
-                    onCheckedChange = { enabled ->
-                        if (!enabled) {
-                            isEnabledCustomTle.value = false
-                        } else {
-                            requestCustomSourcesPermission(
-                                { isEnabledCustomTle.value = true },
-                                { isEnabledCustomTle.value = false }
-                            )
-                        }
-                    }
-                )
-            }
-            OutlinedTextField(
-                value = urlTle.value,
-                onValueChange = { urlTle.value = it },
-                label = { Text(text = stringResource(id = R.string.prefs_data_sources_url_title)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isEnabledCustomTle.value,
+            sourceSection(
+                sectionKey = "sat",
+                label = "Satellites data",
+                urls = satUrls,
+                onAdd = { satUrls.add(nextId.longValue++ to "") },
+                onMoveUp = { i -> if (i > 0) satUrls.add(i - 1, satUrls.removeAt(i)) },
+                onRemove = { i -> satUrls.removeAt(i) },
+                onUrlChange = { i, v -> satUrls[i] = satUrls[i].first to v }
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = stringResource(id = R.string.prefs_data_sources_transceivers_switch))
-                Switch(
-                    checked = isEnabledCustomTransceivers.value,
-                    onCheckedChange = { enabled ->
-                        if (!enabled) {
-                            isEnabledCustomTransceivers.value = false
-                        } else {
-                            requestCustomSourcesPermission(
-                                { isEnabledCustomTransceivers.value = true },
-                                { isEnabledCustomTransceivers.value = false }
-                            )
-                        }
-                    }
-                )
-            }
-            OutlinedTextField(
-                value = urlTransceivers.value,
-                onValueChange = { urlTransceivers.value = it },
-                label = { Text(text = stringResource(id = R.string.prefs_data_sources_url_title)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = isEnabledCustomTransceivers.value,
+            sourceSection(
+                sectionKey = "tx",
+                label = "Transceivers data",
+                urls = txUrls,
+                onAdd = { txUrls.add(nextId.longValue++ to "") },
+                onMoveUp = { i -> if (i > 0) txUrls.add(i - 1, txUrls.removeAt(i)) },
+                onRemove = { i -> txUrls.removeAt(i) },
+                onUrlChange = { i, v -> txUrls[i] = txUrls[i].first to v }
             )
-            Spacer(modifier = Modifier.height(12.dp))
         }
+    }
+}
+
+private fun LazyListScope.sourceSection(
+    sectionKey: String,
+    label: String,
+    urls: List<Pair<Long, String>>,
+    onAdd: () -> Unit,
+    onMoveUp: (Int) -> Unit,
+    onRemove: (Int) -> Unit,
+    onUrlChange: (Int, String) -> Unit
+) {
+    item {
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = label,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f)
+            )
+            IconCard(action = onAdd, resId = R.drawable.ic_add, containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        }
+    }
+    itemsIndexed(urls, key = { _, entry -> "$sectionKey-${entry.first}" }) { index, (_, url) ->
+        val enabledTint = MaterialTheme.colorScheme.onSurfaceVariant
+        OutlinedTextField(
+            value = url,
+            onValueChange = { onUrlChange(index, it) },
+            label = { Text("Source URL") },
+            leadingIcon = {
+                IconButton(onClick = { onMoveUp(index) }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_arrow),
+                        contentDescription = null,
+                        tint = if (index > 0) enabledTint else enabledTint.copy(alpha = 0.32f),
+                        modifier = Modifier.rotate(270f)
+                    )
+                }
+            },
+            trailingIcon = {
+                IconButton(onClick = { onRemove(index) }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_delete),
+                        contentDescription = null
+                    )
+                }
+            },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateItem(fadeInSpec = spring(), fadeOutSpec = spring())
+        )
     }
 }
 
@@ -270,6 +297,7 @@ fun PreviewNetworkOutputDialog() {
                 frequencyAddress = "127.0.0.1",
                 frequencyPort = "4532",
                 frequencyFormat = $$"F $FREQ",
+                frequencyOffsetHz = 0L,
                 bluetoothRotatorState = false,
                 bluetoothRotatorFormat = $$"P $AZ $EL",
                 bluetoothRotatorName = "Default",
@@ -279,7 +307,7 @@ fun PreviewNetworkOutputDialog() {
                 bluetoothFrequencyFormat = $$"F $FREQ"
             ),
             onDismiss = {},
-            onSave = { _, _, _, _, _, _, _, _ -> }
+            onSave = { _, _, _, _, _, _, _, _, _ -> }
         )
     }
 }
@@ -290,7 +318,7 @@ fun NetworkOutputDialog(
     onDismiss: () -> Unit,
     onSave: (
         Boolean, String, String, String,
-        Boolean, String, String, String
+        Boolean, String, String, String, Long
     ) -> Unit
 ) {
     val padding = LocalSpacing.current.large
@@ -304,16 +332,19 @@ fun NetworkOutputDialog(
         mutableStateOf("${initialSettings.frequencyAddress}:${initialSettings.frequencyPort}")
     }
     val frequencyFormat = rememberSaveable { mutableStateOf(initialSettings.frequencyFormat) }
+    val frequencyOffsetHz = rememberSaveable { mutableStateOf(initialSettings.frequencyOffsetHz.toString()) }
     val onAccept = {
         val (rotIp, rotPort) = splitAddress(rotatorAddress.value)
         val (freqIp, freqPort) = splitAddress(frequencyAddress.value)
+        val offsetHz = (frequencyOffsetHz.value.trim().toLongOrNull() ?: 0L)
+            .coerceIn(Constants.FREQ_OFFSET_MIN_HZ, Constants.FREQ_OFFSET_MAX_HZ)
         onSave(
             rotatorState.value, rotIp, rotPort, rotatorFormat.value,
-            frequencyState.value, freqIp, freqPort, frequencyFormat.value
+            frequencyState.value, freqIp, freqPort, frequencyFormat.value, offsetHz
         )
         onDismiss()
     }
-    SharedDialog(
+    ConfirmDialog(
         title = stringResource(R.string.prefs_net_title),
         onCancel = onDismiss,
         onAccept = onAccept
@@ -341,6 +372,27 @@ fun NetworkOutputDialog(
                 format = frequencyFormat.value,
                 onFormatChange = { frequencyFormat.value = it },
                 formatLabel = stringResource(R.string.prefs_net_frequency_format_hint)
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            OutlinedTextField(
+                value = frequencyOffsetHz.value,
+                onValueChange = { frequencyOffsetHz.value = it },
+                singleLine = true,
+                label = { Text(stringResource(R.string.prefs_net_frequency_offset_hint)) },
+                supportingText = { Text(stringResource(R.string.prefs_net_frequency_offset_help)) },
+                trailingIcon = {
+                    IconButton(
+                        onClick = { frequencyOffsetHz.value = "0" },
+                        enabled = frequencyState.value && frequencyOffsetHz.value != "0"
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close),
+                            contentDescription = null
+                        )
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = frequencyState.value
             )
             Spacer(modifier = Modifier.height(12.dp))
         }
@@ -370,6 +422,7 @@ fun PreviewBluetoothOutputDialog() {
                 frequencyAddress = "127.0.0.1",
                 frequencyPort = "4532",
                 frequencyFormat = $$"F $FREQ",
+                frequencyOffsetHz = 0L,
                 bluetoothRotatorState = false,
                 bluetoothRotatorFormat = $$"P $AZ $EL",
                 bluetoothRotatorName = "Default",
@@ -411,7 +464,7 @@ fun BluetoothOutputDialog(
         )
         onDismiss()
     }
-    SharedDialog(
+    ConfirmDialog(
         title = stringResource(R.string.prefs_bt_title),
         onCancel = onDismiss,
         onAccept = onAccept
@@ -538,7 +591,7 @@ fun RadioControlDialog(
         onDismiss()
     }
 
-    SharedDialog(
+    ConfirmDialog(
         title = stringResource(R.string.rc_settings_title),
         onCancel = onDismiss,
         onAccept = onAccept

@@ -90,10 +90,8 @@ class DatabaseRepoTest {
         }
         val settingsRepo = FakeSettingsRepo(
             dataSources = DataSourcesSettings(
-                useCustomTLE = true,
-                useCustomTransceivers = false,
-                tleUrl = customCsvUrl,
-                transceiversUrl = ""
+                satelliteUrls = listOf(customCsvUrl),
+                transceiversUrls = emptyList()
             )
         )
         val repository = DatabaseRepo(dispatcher, dataParser, localSource, remoteSource, settingsRepo)
@@ -122,6 +120,10 @@ private class FakeRemoteSource : IRemoteSource {
     override suspend fun getFileStream(uri: String): InputStream? = fileStreams[uri]?.invoke()
 
     override suspend fun getNetworkStream(url: String): InputStream? = networkStreams[url]?.invoke()
+
+    override suspend fun getAmSatCatalog(): String? = null
+
+    override suspend fun getAmSatReports(hours: Int, limit: Int): String? = null
 }
 
 private class FakeLocalSource : ILocalSource {
@@ -174,7 +176,7 @@ private class FakeSettingsRepo(dataSources: DataSourcesSettings = defaultDataSou
     override val databaseState: MutableStateFlow<DatabaseState> = MutableStateFlow(DatabaseState(0, 0, 0L))
 
     override val rcSettings: StateFlow<RCSettings> = MutableStateFlow(
-        RCSettings(false, "", "", "", false, "", "", "", false, "", "", "", false, "", "")
+        RCSettings(false, "", "", "", false, "", "", "", 0L, false, "", "", "", false, "", "")
     )
 
     override val otherSettings: StateFlow<OtherSettings> = MutableStateFlow(
@@ -213,13 +215,15 @@ private class FakeSettingsRepo(dataSources: DataSourcesSettings = defaultDataSou
     }
 
     override fun updateRadioControlSettings(settings: RadioControlSettings) = Unit
+
+    override fun getSatelliteOffset(catnum: Int): String = ""
+
+    override fun setSatelliteOffset(catnum: Int, offset: String) = Unit
 }
 
 private fun defaultDataSourcesSettings(): DataSourcesSettings {
     return DataSourcesSettings(
-        useCustomTLE = false,
-        useCustomTransceivers = false,
-        tleUrl = "",
-        transceiversUrl = ""
+        satelliteUrls = emptyList(),
+        transceiversUrls = emptyList()
     )
 }

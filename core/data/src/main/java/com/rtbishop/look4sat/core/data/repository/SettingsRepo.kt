@@ -29,14 +29,17 @@ import com.rtbishop.look4sat.core.domain.model.OtherSettings
 import com.rtbishop.look4sat.core.domain.model.PassesSettings
 import com.rtbishop.look4sat.core.domain.model.RCSettings
 import com.rtbishop.look4sat.core.domain.model.RadioControlSettings
+import com.rtbishop.look4sat.core.domain.model.Constants
 import com.rtbishop.look4sat.core.domain.predict.GeoPos
 import com.rtbishop.look4sat.core.domain.repository.ISettingsRepo
+import com.rtbishop.look4sat.core.domain.source.Sources
 import com.rtbishop.look4sat.core.domain.utility.positionToQth
 import com.rtbishop.look4sat.core.domain.utility.qthToPosition
 import com.rtbishop.look4sat.core.domain.utility.round
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import org.json.JSONObject
 
 class SettingsRepo(
     private val locationManager: LocationManager,
@@ -67,6 +70,7 @@ class SettingsRepo(
     private val keyFrequencyAddress = "frequencyAddress"
     private val keyFrequencyPort = "frequencyPort"
     private val keyFrequencyFormat = "frequencyFormat"
+    private val keyFrequencyOffsetHz = "frequencyOffsetHz"
     private val keySelectedIds = "selectedIds"
     private val keySelectedSatModes = "selectedSatModes"
     private val keyStateOfAutoUpdate = "stateOfAutoUpdate"
@@ -88,11 +92,10 @@ class SettingsRepo(
     private val keyHighElevation = "highElevation"
     private val keyRadarCompassOffset = "radarCompassOffset"
     private val keyRadarCompassOffsetElev = "radarCompassOffsetElev"
-    private val keyUseCustomTle = "useCustomTle"
-    private val keyUseCustomTransceivers = "useCustomTransceivers"
-    private val keyTleUrl = "tleUrl"
-    private val keyTransceiversUrl = "transceiversUrl"
+    private val keySatelliteUrls = "satelliteUrls"
+    private val keyTransceiversUrls = "transceiversUrls"
     private val separatorComma = ","
+    private val separatorUrl = "\n"
 
     //region # Satellites selection settings
     private val _satelliteSelection = MutableStateFlow(getSelectedIds())
@@ -276,6 +279,10 @@ class SettingsRepo(
     override val rcSettings: StateFlow<RCSettings> = _rcSettings
 
     override fun updateRCSettings(settings: RCSettings) {
+        val clampedFreqOffsetHz = settings.frequencyOffsetHz.coerceIn(
+            Constants.FREQ_OFFSET_MIN_HZ,
+            Constants.FREQ_OFFSET_MAX_HZ
+        )
         preferences.edit {
             putBoolean(keyRotatorState, settings.rotatorState)
             putString(keyRotatorAddress, settings.rotatorAddress)
@@ -285,6 +292,7 @@ class SettingsRepo(
             putString(keyFrequencyAddress, settings.frequencyAddress)
             putString(keyFrequencyPort, settings.frequencyPort)
             putString(keyFrequencyFormat, settings.frequencyFormat)
+            putLong(keyFrequencyOffsetHz, clampedFreqOffsetHz)
             putBoolean(keyBluetoothRotatorState, settings.bluetoothRotatorState)
             putString(keyBluetoothRotatorFormat, settings.bluetoothRotatorFormat)
             putString(keyBluetoothRotatorName, settings.bluetoothRotatorName)
@@ -293,7 +301,7 @@ class SettingsRepo(
             putString(keyBluetoothFrequencyFormat, settings.bluetoothFrequencyFormat)
             putString(keyBluetoothFrequencyAddress, settings.bluetoothFrequencyAddress)
         }
-        _rcSettings.value = settings
+        _rcSettings.value = settings.copy(frequencyOffsetHz = clampedFreqOffsetHz)
     }
 
     private fun getRCSettings(): RCSettings = RCSettings(
@@ -305,6 +313,8 @@ class SettingsRepo(
         frequencyAddress = preferences.getString(keyFrequencyAddress, null) ?: "127.0.0.1",
         frequencyPort = preferences.getString(keyFrequencyPort, null) ?: "4532",
         frequencyFormat = preferences.getString(keyFrequencyFormat, null) ?: $$"F $FREQ",
+        frequencyOffsetHz = preferences.getLong(keyFrequencyOffsetHz, 0L)
+            .coerceIn(Constants.FREQ_OFFSET_MIN_HZ, Constants.FREQ_OFFSET_MAX_HZ),
         bluetoothRotatorState = preferences.getBoolean(keyBluetoothRotatorState, false),
         bluetoothRotatorFormat = preferences.getString(keyBluetoothRotatorFormat, null) ?: $$"P $AZ $EL",
         bluetoothRotatorName = preferences.getString(keyBluetoothRotatorName, null) ?: "Default",
@@ -364,19 +374,19 @@ class SettingsRepo(
 
     override fun updateDataSourcesSettings(settings: DataSourcesSettings) {
         preferences.edit {
-            putBoolean(keyUseCustomTle, settings.useCustomTLE)
-            putBoolean(keyUseCustomTransceivers, settings.useCustomTransceivers)
-            putString(keyTleUrl, settings.tleUrl)
-            putString(keyTransceiversUrl, settings.transceiversUrl)
+            putString(keySatelliteUrls, settings.satelliteUrls.joinToString(separatorUrl))
+            putString(keyTransceiversUrls, settings.transceiversUrls.joinToString(separatorUrl))
         }
         _dataSourcesSettings.value = settings
     }
 
     private fun getDataSourcesSettings(): DataSourcesSettings = DataSourcesSettings(
-        useCustomTLE = preferences.getBoolean(keyUseCustomTle, false),
-        useCustomTransceivers = preferences.getBoolean(keyUseCustomTransceivers, false),
-        tleUrl = preferences.getString(keyTleUrl, "https://example.com/tle.txt") ?: "",
-        transceiversUrl = preferences.getString(keyTransceiversUrl, "https://example.com/radio.json") ?: ""
+        satelliteUrls = preferences.getString(keySatelliteUrls, null)
+            ?.split(separatorUrl)?.filter { it.isNotBlank() }
+            ?: Sources.satelliteDataUrls,
+        transceiversUrls = preferences.getString(keyTransceiversUrls, null)
+            ?.split(separatorUrl)?.filter { it.isNotBlank() }
+            ?: Sources.transceiversDataUrls
     )
     //endregion
 
@@ -417,5 +427,27 @@ class SettingsRepo(
         baudRate = preferences.getInt(keyRadioBaudRate, 4800),
         splitMode = preferences.getBoolean(keyRadioSplitMode, false)
     )
-    //endregion
+
+    private val keySatelliteOffsets = "satelliteOffsets"
+
+    override fun getSatelliteOffset(catnum: Int): String {
+        val json = preferences.getString(keySatelliteOffsets, "{}") ?: "{}"
+        return try {
+            JSONObject(json).optString(catnum.toString(), "")
+        } catch (_: Exception) {
+            ""
+        }
+    }
+
+    override fun setSatelliteOffset(catnum: Int, offset: String) {
+        val json = preferences.getString(keySatelliteOffsets, "{}") ?: "{}"
+        val updated = try {
+            val obj = JSONObject(json)
+            if (offset.isEmpty()) obj.remove(catnum.toString()) else obj.put(catnum.toString(), offset)
+            obj.toString()
+        } catch (_: Exception) {
+            """{"$catnum": "$offset"}"""
+        }
+        preferences.edit { putString(keySatelliteOffsets, updated) }
+    }
 }
