@@ -19,21 +19,86 @@ jobs:
       - name: Download satellite data files
         run: |
           mkdir -p tledata
-          # Celestrak CSV
-          curl -fsSL --max-time 120 -o tledata/all.csv       "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=csv" || echo "⚠ Failed: all"
+          # Celestrak TLE
+          curl -fsSL --max-time 120 -o tledata/all.tle       "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle" || echo "⚠ Failed: all"
           curl -fsSL --max-time 120 -o tledata/nasabare.txt     "https://amsat.org/tle/current/nasabare.txt" || echo "⚠ Failed: amsat"
           curl -fsSL --max-time 120 -o tledata/classfd.zip "https://www.mmccants.org/tles/classfd.zip" || echo "⚠ Failed: classified"
           curl -fsSL --max-time 120 -o tledata/inttles.zip   "https://www.mmccants.org/tles/inttles.zip" || echo "⚠ Failed: mccants"
           curl -fsSL --max-time 120 -o tledata/satonline.txt     "https://r4uab.ru/satonline.txt" || echo "⚠ Failed: r4uab"
-          curl -fsSL --max-time 120 -o tledata/satnogs.txt     "https://db.satnogs.org/api/tle/?format=3le" || echo "⚠ Failed: r4uab"
+          curl -fsSL --max-time 120 -o tledata/satnogs.txt     "https://db.satnogs.org/api/tle/?format=3le" || echo "⚠ Failed: satnogs"
           curl -fsSL --max-time 120 -o tledata/iss.txt     "https://live.ariss.org/iss.txt" || echo "⚠ Failed: ariss"
-          
-          
+
+      - name: Merge TLE files into all.txt
+        run: |
+          python3 -c "
+          import zipfile, re, tempfile, os
+
+          def parse_catnum(line1):
+              m = re.match(r'^1\s+(\d{5})', line1)
+              return int(m.group(1)) if m else None
+
+          def read_tle_groups(lines):
+              return [lines[i:i+3] for i in range(0, len(lines) - 2, 3)
+                      if lines[i+1].startswith('1') and lines[i+2].startswith('2')]
+
+          sources = [
+              'tledata/satnogs.txt',
+              'tledata/nasabare.txt',
+              'tledata/all.tle',
+              'tledata/classfd.zip',
+              'tledata/inttles.zip',
+              'tledata/satonline.txt',
+              'tledata/iss.txt',
+          ]
+
+          merged = {}
+          for src in sources:
+              if src.endswith('.zip'):
+                  with zipfile.ZipFile(src) as z:
+                      for name in z.namelist():
+                          lines = z.read(name).decode('utf-8', errors='ignore').splitlines()
+                          lines = [l.rstrip() for l in lines]
+                          for group in read_tle_groups(lines):
+                              catnum = parse_catnum(group[1])
+                              if catnum is not None:
+                                  merged[catnum] = group
+              else:
+                  with open(src, encoding='utf-8', errors='ignore') as f:
+                      lines = [l.rstrip() for l in f]
+                  for group in read_tle_groups(lines):
+                      catnum = parse_catnum(group[1])
+                      if catnum is not None:
+                          merged[catnum] = group
+
+          with open('tledata/all.txt', 'w', encoding='utf-8') as f:
+              for group in merged.values():
+                  f.write('\n'.join(group) + '\n')
+          print(f'merged {len(merged)} satellites into all.txt')
+          "
 
       - name: Download transceivers data
         run: |
           curl -fsSL --max-time 120 -o tledata/satnogs_transceivers.json "https://db.satnogs.org/api/transmitters/?format=json&status=active" || echo "⚠ Failed: transceivers"
-          curl -fsSL --max-time 120 -o tledata/transmitters.json "https://r4uab.ru/transmitters.json" || echo "⚠ Failed: ariss"
+          curl -fsSL --max-time 120 -o tledata/transmitters.json "https://r4uab.ru/transmitters.json" || echo "⚠ Failed: r4uab"
+
+      - name: Merge transceivers into trans.json
+        run: |
+          python3 -c "
+          import json
+          with open('tledata/satnogs_transceivers.json', encoding='utf-8') as f:
+              satnogs = json.load(f)
+          with open('tledata/transmitters.json', encoding='utf-8') as f:
+              transmitters = json.load(f)
+          merged = {}
+          for r in satnogs:
+              merged[r['uuid']] = r
+          for r in transmitters:
+              merged[r['uuid']] = r
+          with open('tledata/trans.json', 'w', encoding='utf-8') as f:
+              json.dump(list(merged.values()), f, ensure_ascii=False)
+          print(f'merged {len(merged)} transceivers')
+          "
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
