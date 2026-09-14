@@ -34,7 +34,9 @@ It is now and always will be completely ad-free and open-source.
 *  Custom TLE satellite data import is available via Three Line Element .txt files
 *  Offline first: calculations are made offline. Weekly TLE data update is recommended.
 
-## 自定义数据源
+## 自定义数据源(国内加速)
+<img width="387" height="587" alt="图片" src="https://github.com/user-attachments/assets/79382ffb-8107-4896-af7b-6a8c54f5cdfc" />
+
 
 ### 卫星轨道数据
 
